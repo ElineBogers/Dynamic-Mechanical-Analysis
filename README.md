@@ -1,6 +1,6 @@
 # Dynamic-Mechanical-Analysis
 
-Python code to analyse data generated from Optical Introferometry-Based Micropipette Aspiration. This method enables accurate identification of mechanical properties of materials. The data is generated from a DMA-based Labview model and is saved as TDMS file. In this DMA, pressure is applied in a sum of multiple frequencies.
+Python code to analyse data generated from Optical Interoferometry-Based Micropipette Aspiration. This method enables accurate identification of mechanical properties of materials. The data is generated from a DMA-based Labview model and is saved as TDMS file. In this DMA, pressure is applied in a sum of multiple frequencies.
 
 In order to filter out the single-frequency signal, the maxima of the FFT (def_FFT) are used to find the proper frequencies and a lock-in amplifier principle to find the corresponding amplitudes and phases (def_lock_in).
 
