@@ -4,7 +4,7 @@ Python code to analyse data generated from Optical Introferometry-Based Micropip
 
 In order to filter out the single-frequency signal, the maxima of the FFT (def_FFT) are used to find the proper frequencies and a lock-in amplifier principle to find the corresponding amplitudes and phases (def_lock_in).
 
-Multiple_DMA is the executor of the analysis. The output represents the input signal compared the a reference wave based on the found frequencies, amplitudes and phases to see if these variables match with the original signal. 
+Multiple_DMA is the executor of the analysis. The output represents the input signal compared to the reference wave based on the found frequencies, amplitudes and phases to see if these variables match with the original signal. 
 
 Eventually the frequency-dependent viscoelastic response of the material will be determined (not yet implemented in the code).
 
