@@ -24,8 +24,8 @@ xN = 1
 N = 1
 
 #radius pipette and sample
-rad_pip = 45e-6
-rad_sam = 80e-6
+rad_pip = 40e-6
+rad_sam = 55e-6
 
 #deltasense data
 for filename in os.listdir(str("Data_Eline")) :
@@ -86,6 +86,7 @@ for filename in os.listdir(str("Data_Eline")) :
             θ_P.append(θ_freq_P)
 
             R_freq_L, θ_freq_L = def_lock_in.filter_freq(aspirated_length, frequency, max_frequency, min_frequency, order)
+            R_L_freq = R_freq_L / (1* math.exp(9))
 
             #append lists
             R_L.append(R_freq_L)
@@ -95,13 +96,13 @@ for filename in os.listdir(str("Data_Eline")) :
 
             θ_T.append(θ)
 
-            E_S, E_L, T = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P, R_freq_L, θ)
+            E_S, E_L, T = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P, R_L_freq, θ)
 
             E_storage.append(E_S)
             E_loss.append(E_L)
             Tand.append(T)   
         
-        print(f" \n Frequencies: {max_freqs} \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n")
+        print(f" \n Frequencies: {max_freqs} \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss}")
 
         #plot new amplitude and phase as a reference graph
         ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_P, θ_P, operations)
@@ -133,7 +134,7 @@ for filename in os.listdir(str("Data_Eline")) :
         plt.plot(max_freqs, E_loss, label = "E''", color = "slateblue")
         plt.scatter(max_freqs, E_loss)
         plt.xlabel("Frequency [Hz]")
-        plt.ylabel("E', E'' [kPa]")
+        plt.ylabel("E', E'' [Pa]")
         plt.legend(loc="upper left")
 
         plt.show()
