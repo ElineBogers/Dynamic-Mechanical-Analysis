@@ -13,10 +13,11 @@ def complex_mod (θ, R_freq_P, R_freq_L, pip_rad, sam_rad):
     #   -sample local radius
     beta1 = 2.0142
     beta3 = 2.1187
-        
+   
     
     #calculate the storage and loss modulus based on the extended
     #Zhou-Plaza method
+    #assume 0.5 Poisson Ratio
     Estor = 3*pip_rad/beta1*R_freq_P/(1-(pip_rad/sam_rad)^beta3)/R_freq_L*cos(phi)
     Eloss = 3*pip_rad/beta1*R_freq_P/(1-(pip_rad/sam_rad)^beta3)/R_freq_L*sin(phi)
     tand = Eloss/Estor
