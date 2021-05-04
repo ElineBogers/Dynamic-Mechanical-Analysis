@@ -45,12 +45,6 @@ def maxima (data_file, amount_freq, xN, N):
     #define minimum frequency by time of oscillation
     min_freq = min(max_freq)
     max_freq = [def_min_freq if i == min_freq else i for i in max_freq]
-    
-    plt.figure(2)
-    plt.loglog(f, Pxx_den)
-    plt.title("FFT")
-    plt.xlabel("Frequency [Hz]")
-    plt.ylabel("Intensity")
 
     
     return freq_test_retrieval, maxima_freqs, max_freq, f , Pxx_den
