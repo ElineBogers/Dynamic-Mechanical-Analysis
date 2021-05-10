@@ -9,14 +9,14 @@ def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file) :
     #define amount iterations
     N_samples_stop = 0
     N_now = N_wait_reversed 
-    N_stop = int()
+    N_stop = N_wait_reversed
 
     #boolean to start and end new file
     booleanstop = False
     
     #define range of standard deviation
-    mean_min = mean - (3*standard_deviation)
-    mean_max = mean + (3*standard_deviation)
+    mean_min = mean - (standard_deviation)
+    mean_max = mean + (standard_deviation)
     
     #data for determination oscillation
     data_oscillation = data_file[N_normal:]
@@ -35,11 +35,13 @@ def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file) :
             N_samples_stop = N_samples_stop + 1
 
             #define start when signal is bigger for 0,025 seconds + boolean 
-            if N_samples_stop == 100:
-                N_stop = N_now - 110
+            if N_samples_stop == 150:
+                N_stop = N_now + 150
                 booleanstop = True        
         else :
             N_samples_stop= 0
+            mean_min = pressure - 0.1*standard_deviation
+            mean_max = pressure + 0.1*standard_deviation
 
         N_now = N_now - 1
         

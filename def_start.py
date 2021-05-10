@@ -14,8 +14,8 @@ def start_osci (N_wait, mean, standard_deviation , data_file):
     booleanstart = False
 
     #define range of standard deviation
-    mean_min = mean - (5*standard_deviation)
-    mean_max = mean + (5*standard_deviation)
+    mean_min = mean - (standard_deviation)
+    mean_max = mean + (standard_deviation)
 
     #data for determination oscillation
     data_oscillation = data_file[N_wait:]
@@ -32,6 +32,9 @@ def start_osci (N_wait, mean, standard_deviation , data_file):
                 booleanstart = True        
         else :
             N_samples_start = 0
+
+            mean_min = pressure - 0.1*standard_deviation
+            mean_max = pressure + 0.1*standard_deviation
 
         N_data_loop = N_data_loop + 1
     return (N_start)

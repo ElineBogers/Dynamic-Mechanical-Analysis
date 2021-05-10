@@ -11,7 +11,7 @@ import def_butter_lowpass
 import def_E_modulus
 
 #to determine how many frequencies have to be found from local maxima
-amount_freqs = 5
+amount_freqs = 6
 
 #define phase and amplitude
 amplitude = [50]*amount_freqs
@@ -21,7 +21,7 @@ phase = [0]*amount_freqs
 xN = 1
 
 #how many cycle for the lowest frequency
-N = 1
+N = 2
 
 #radius pipette and sample
 rad_pip = 40e-6
@@ -33,7 +33,7 @@ for filename in os.listdir(str("Data_Eline")) :
         tdms_file = TdmsFile.read(filename)
         group = tdms_file['Demodulated data']
         p_channel = group["pressure"]
-        l_channel = group["aspirated length"] 
+        l_channel = group["pressure"] 
         
         #filter data with lowpass
         p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 10)
@@ -60,8 +60,6 @@ for filename in os.listdir(str("Data_Eline")) :
         f, maxima_f, max_freqs, f, Pxx_den = def_FFT.maxima(pressure, amount_freqs, xN, N)
         max_frequency = max(max_freqs)
         min_frequency = min(max_freqs)
-
-        max_freqs.sort()
 
         #lists of magintude and phase
         R_P = []
@@ -102,7 +100,7 @@ for filename in os.listdir(str("Data_Eline")) :
             E_loss.append(E_L)
             Tand.append(T)   
         
-        print(f" \n Frequencies: {max_freqs} \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss}")
+        print(f" \n Frequencies: {max_freqs} \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss} \n")
 
         #plot new amplitude and phase as a reference graph
         ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_P, θ_P, operations)
@@ -134,7 +132,7 @@ for filename in os.listdir(str("Data_Eline")) :
         plt.plot(max_freqs, E_loss, label = "E''", color = "slateblue")
         plt.scatter(max_freqs, E_loss)
         plt.xlabel("Frequency [Hz]")
-        plt.ylabel("E', E'' [Pa]")
+        plt.ylabel("E', E'' [kPa]")
         plt.legend(loc="upper left")
 
         plt.show()

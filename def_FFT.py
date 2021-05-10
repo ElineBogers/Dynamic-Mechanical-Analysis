@@ -23,6 +23,7 @@ def maxima (data_file, amount_freq, xN, N):
 
     #define lists for maxima intesities
     max_freq = [] * amount_freq
+    max_freq_all = []
     intensity = maxima_freqs
 
     for x in itertools.repeat(0, (amount_freq + 2)) :
@@ -33,8 +34,9 @@ def maxima (data_file, amount_freq, xN, N):
 
         intensity = np.where(intensity == max_intensity, 0, intensity)
         freq_index = freq_test_retrieval[max_index_int]
+        max_freq_all.append(freq_index)
 
-        if freq_index < (def_min_freq - 0.001):
+        if freq_index < (def_min_freq - 0.025):
             continue
         else :
             if len (max_freq) >= amount_freq:
@@ -44,8 +46,10 @@ def maxima (data_file, amount_freq, xN, N):
 
     #define minimum frequency by time of oscillation
     min_freq = min(max_freq)
-    max_freq = [def_min_freq if i == min_freq else i for i in max_freq]
+    #max_freq = [def_min_freq if i == min_freq else i for i in max_freq]
 
+    #print(max_freq_all)
+    max_freq.sort()
     
     return freq_test_retrieval, maxima_freqs, max_freq, f , Pxx_den
 

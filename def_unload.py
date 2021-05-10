@@ -41,12 +41,12 @@ def define_unload(data_file, std_dev):
         else:
             N_equal = 0
 
-            P_prev1 = pressure - 2*std_dev
-            P_prev2 = pressure + 2*std_dev
+            P_prev1 = pressure - 5*std_dev
+            P_prev2 = pressure + 5*std_dev
         N_now = N_now - 1
 
     N_normal = N_total - N_wait_reversed
-    N_wait_reversed_start = N_wait_reversed - 800
+    N_wait_reversed_start = N_wait_reversed - 500
 
     return N_wait_reversed, N_normal, N_wait_reversed_start
     
