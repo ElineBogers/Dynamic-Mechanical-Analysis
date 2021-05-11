@@ -84,7 +84,7 @@ def define_period(pressure_data, N, length_data) :
         L_fin_std_dev, L_fin_mean = def_std_dev.variance_cal(L_data_mean)
 
         #define data length
-        data_length = ((length_data[N_start:N_stop]) - L_fin_mean) / 1.33
+        data_length = ((length_data[N_start:N_stop]) - L_fin_mean) / 1.33 
         data_length = np.tile(data_length, N)
     
         for length in data_length:
@@ -94,23 +94,30 @@ def define_period(pressure_data, N, length_data) :
         define_length = 0
 
     area1 = pressure_data[0:750]
-    op1 = np.array([0,250])
+    op1 = []
+    for x in range(0,750): op1.append(x)
     area2 = pressure_data[4000:N_wait]
-    op2 = [range(4000, N_wait, 1)]
+    op2 = []
+    for x in range(4000,N_wait): op2.append(x)
     area3 = pressure_data[N_wait:N_start]
-    op3 = [range(N_wait, N_start, 1)]
+    op3 = []
+    for x in range(N_wait, N_start): op3.append(x)
     area4 = pressure_data[N_start:N_stop]
-    op4 = [range(N_start, N_stop, 1)]
+    op4 = []
+    for x in range(N_start, N_stop): op4.append(x)
     area5 = pressure_data[N_stop:N_wait_reversed]
-    op5 = [range(N_stop, N_wait_reversed, 1)]
-    
+    op5 = []
+    for x in range(N_stop, N_wait_reversed): op5.append(x)
+    #area6 = pressure_data[]
     #plt.plot(pressure_data, label = "Data", color = "Black")
-    #plt.plot(area1, label = "Area 1", color = "Blue")
-    #plt.plot(area2, label = "Area 2", color = "Yellow")
-    #plt.plot(area3, label = "Area 3", color = "Red")
-    #plt.plot(area4, label = "Area 4", color = "Green")
-    #plt.plot(area5, label = "Area 5", color = "Orange")
-    #plt.legend(loc="upper left")
+    plt.plot(op1, area1, label = "Area 1", color = "Blue")
+    plt.plot(op2, area2, label = "Area 2", color = "Yellow")
+    plt.plot(op3, area3, label = "Area 3", color = "Red")
+    plt.plot(op4, area4, label = "Area 4", color = "Green")
+    plt.plot(op5, area5, label = "Area 5", color = "Orange")
+    #plt.plot(op6)
+    plt.legend(loc="upper left")
+    #plt.show()
     
 
     return time_definition, define_pressure, define_length

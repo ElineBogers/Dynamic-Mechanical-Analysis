@@ -21,11 +21,11 @@ phase = [0]*amount_freqs
 xN = 1
 
 #how many cycle for the lowest frequency
-N = 2
+N = 3
 
 #radius pipette and sample
-rad_pip = 40e-6
-rad_sam = 55e-6
+rad_pip = 86e-6
+rad_sam = 350e-6
 
 #deltasense data
 for filename in os.listdir(str("Data_Eline")) :
@@ -33,7 +33,7 @@ for filename in os.listdir(str("Data_Eline")) :
         tdms_file = TdmsFile.read(filename)
         group = tdms_file['Demodulated data']
         p_channel = group["pressure"]
-        l_channel = group["pressure"] 
+        l_channel = group["aspirated length"] 
         
         #filter data with lowpass
         p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 10)
