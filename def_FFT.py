@@ -1,10 +1,5 @@
-import math
 import numpy as np
-import matplotlib.pyplot as plt
-from nptdms import TdmsFile
 from scipy import signal
-import def_period
-from scipy.signal import find_peaks
 import itertools
 
 def maxima (data_file, amount_freq, xN, N):
@@ -25,6 +20,7 @@ def maxima (data_file, amount_freq, xN, N):
     max_freq = [] * amount_freq
     max_freq_all = []
     intensity = maxima_freqs
+    
 
     for x in itertools.repeat(0, (amount_freq + 2)) :
         del x
@@ -43,12 +39,8 @@ def maxima (data_file, amount_freq, xN, N):
                 continue
             else: 
                 max_freq.append(freq_index) 
-
-    #define minimum frequency by time of oscillation
-    min_freq = min(max_freq)
-    #max_freq = [def_min_freq if i == min_freq else i for i in max_freq]
-
-    #print(max_freq_all)
+        
+    #sort frequencies
     max_freq.sort()
     
     return freq_test_retrieval, maxima_freqs, max_freq, f , Pxx_den

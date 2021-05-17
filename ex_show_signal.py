@@ -3,6 +3,7 @@ from nptdms import TdmsFile
 import def_period
 import numpy as np
 import os
+import def_creep_equ
 
 
 for filename in os.listdir(str("Data_Eline")) :
@@ -11,7 +12,7 @@ for filename in os.listdir(str("Data_Eline")) :
         group = tdms_file['Demodulated data']
         p_channel = group["pressure"]
         p_channel_data = p_channel[:]
-        l_channel = group['pressure']
+        l_channel = group['aspirated length']
         l_channel_data = l_channel[:]
 
         fig, ax1 = plt.subplots()
@@ -24,8 +25,7 @@ for filename in os.listdir(str("Data_Eline")) :
         ax2.set_ylabel("Displacement [nm]")
         
         plt.legend(loc="upper left")
-
-        plt.show()
+        plt.show()     
 
  
 

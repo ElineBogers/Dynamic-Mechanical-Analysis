@@ -16,7 +16,7 @@ def define_wait(data_file, std_dev) :
     booleanwait = False
 
     #define start wait
-    N_wait = 0
+    N_wait = 5000
 
     #filter out preload (and time it takes to start run)
     start_data = data_file[5000:]

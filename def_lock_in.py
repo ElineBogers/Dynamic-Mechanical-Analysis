@@ -17,10 +17,10 @@ def filter_freq(signal, frequency, max_freq, min_freq, alpha):
 
     #Multiply reference wave by signal and apply lowpass filter
     sin_mixed = np.multiply(signal, ref_sine)
-    sin_mixed_lp = def_butter_lowpass.butter_lowpass_filter(sin_mixed, max_freq*0.99, alpha)
+    sin_mixed_lp = def_butter_lowpass.butter_lowpass_filter(sin_mixed, max_freq*1.5, alpha)
 
     cos_mixed = np.multiply(signal, ref_cosine)
-    cos_mixed_lp = def_butter_lowpass.butter_lowpass_filter(cos_mixed, max_freq*0.99, alpha)
+    cos_mixed_lp = def_butter_lowpass.butter_lowpass_filter(cos_mixed, max_freq*1.5, alpha)
 
     #Define mean of sine and cosine wave
     mean_s = np.mean(sin_mixed_lp)

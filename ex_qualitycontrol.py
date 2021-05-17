@@ -12,20 +12,20 @@ import def_lock_in
 import def_butter_lowpass
 
 #define frequencies
-frequencies = [0.18, 0.4, 0.667, 2.0]
+frequencies = [0.33, 0.05, 0.11, 0.75, 1.2, 3.5]
 
 #to determine how many frequencies have to be found from local maxima
 amount_freqs = len(frequencies)
 
 #define phase and amplitude
-amplitude = [50]*amount_freqs
+amplitude = [100]*amount_freqs
 phase = [0]*amount_freqs
 
 #variable for how many times the data should be repeated
 xN = 1
 
 #how many cycle for the lowest frequency
-Nlist=[1, 2, 3, 4, 5, 6, 7, 8]
+Nlist=[1]*24        #, 2, 3, 4, 5, 6, 7, 8
 
 #loop over graph properties
 colors = ["Red", "Green", "Orange", "Purple", "Yellow", "Blue", "Brown", "Pink"]
@@ -35,10 +35,10 @@ x = 0
 directory = "Data_Eline"
 
 #list for quality measurements
-Ns = [1, 2, 3, 4, 5, 6, 7, 8] #, 10 , 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24
+Ns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
 areasIN = []
 areasOUT = []
-tick_label = ["1", "2", "3", "4", "5", "6", "7", "8"]
+tick_label = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10" , "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"]
 
 #deltasense data
 for filename in os.listdir(str(directory)) :
@@ -85,10 +85,12 @@ for filename in os.listdir(str(directory)) :
         plt.figure(2)
         #plt.plot(t_gen, P_gen, label = "Reference Output", color = "seagreen")
         plt.plot(time, oscillation, label = tick_label[x], color = colors[x])
-        #plt.plot(time1, signal, label = "Reference Input", color = 'royalblue')
+        plt.plot(time1, signal, label = "Reference Input", color = 'royalblue')
         plt.legend(loc="upper right")
         plt.xlabel("time [s]")
         plt.ylabel("pressure [Pa]")
+
+        plt.show()
 
         #starting value
         area_sig = 0
@@ -141,7 +143,7 @@ plt.xlabel("N")
 plt.ylabel("∆ Area")
 plt.title("OUTPUT reference")
 
-plt.show()
+#plt.show()
 
 
 

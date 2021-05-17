@@ -9,6 +9,7 @@ import def_lock_in
 import def_reference
 import def_butter_lowpass
 import def_E_modulus
+import def_FFT2
 
 #to determine how many frequencies have to be found from local maxima
 amount_freqs = 6
@@ -21,7 +22,7 @@ phase = [0]*amount_freqs
 xN = 1
 
 #how many cycle for the lowest frequency
-N = 3
+N = 2
 
 #radius pipette and sample
 rad_pip = 86e-6
@@ -39,17 +40,6 @@ for filename in os.listdir(str("Data_Eline")) :
         p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 10)
         l_channel = def_butter_lowpass.butter_lowpass_filter(l_channel, 10)
 
-        fig, ax1 = plt.subplots()
-        ax1.plot(p_channel, label = "Pressure", color = 'royalblue')
-        ax1.set_xlabel("operations")
-        ax1.set_ylabel("Pressure [Pa]")
-        plt.legend(loc="upper left")
-
-        ax2 = ax1.twinx()
-        ax2.plot(l_channel, label = "Aspirated length", color = "firebrick")
-        ax2.set_ylabel("Displacement [nm]")
-        plt.legend(loc="upper right")
-
         #Define oscillation (filter out preload)
         time, pressure, aspirated_length = def_period.define_period(p_channel, xN, l_channel)           
 
@@ -60,6 +50,15 @@ for filename in os.listdir(str("Data_Eline")) :
         f, maxima_f, max_freqs, f, Pxx_den = def_FFT.maxima(pressure, amount_freqs, xN, N)
         max_frequency = max(max_freqs)
         min_frequency = min(max_freqs)
+
+        f_L, maxima_f_L, max_freqs_L, f_L, Pxx_den_L = def_FFT.maxima(aspirated_length, amount_freqs, xN, N)
+        max_frequency = max(max_freqs)
+        min_frequency = min(max_freqs)
+
+        #new fft
+        fft_data_P, freq_P, magnitude2_P, phase2_P = def_FFT2.ampli_phase_FFT(pressure, max_freqs, time)
+        fft_data_L, freq_L, magnitude2_L, phase2_L = def_FFT2.ampli_phase_FFT(aspirated_length, max_freqs_L, time)
+
 
         #lists of magintude and phase
         R_P = []
@@ -73,6 +72,10 @@ for filename in os.listdir(str("Data_Eline")) :
         E_storage = []
         E_loss = []
         Tand = []
+
+        E_storage_FFT = []
+        E_loss_FFT = []
+        x = 0
 
         #Filter out single frequencies
         for frequency in max_freqs:
@@ -99,38 +102,96 @@ for filename in os.listdir(str("Data_Eline")) :
             E_storage.append(E_S)
             E_loss.append(E_L)
             Tand.append(T)   
+
+            magni_FFT_P = magnitude2_P[x]
+            magni_FFT_L = magnitude2_L[x]
+            phase_FFT_P = phase2_P[x]
+            phase_FFT_L = phase2_L[x]
+
+            θ_FFT = phase_FFT_P - phase_FFT_L
+            
+            E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, magni_FFT_P, magni_FFT_L, θ_FFT)
+
+            E_storage_FFT.append(E_S_FFT)
+            E_loss_FFT.append(E_L_FFT)
+
+            x = x + 1
         
-        print(f" \n Frequencies: {max_freqs} \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss} \n")
+        print(f" \n Frequencies pressure: {max_freqs}\n\n Frequencies aspirated length: {max_freqs_L}  \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss} \n \n E' FFT: {E_storage_FFT} \n E'': {E_loss_FFT}")
 
         #plot new amplitude and phase as a reference graph
         ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_P, θ_P, operations)
         ref_L_time, ref_L = def_reference.reference_data(max_freqs, R_L, θ_L, operations)
 
+        ref_FFT_time_P, ref_FFT_P = def_reference.reference_data(max_freqs, magnitude2_P, phase2_P, operations)
+        ref_FFT_time_L, ref_FFT_L = def_reference.reference_data(max_freqs, magnitude2_L, phase2_L, operations)
+
+        fig, ax1 = plt.subplots()
+        ax1.plot(p_channel, label = "Pressure", color = 'royalblue')
+        ax1.set_xlabel("operations")
+        ax1.set_ylabel("Pressure [Pa]")
+        plt.legend(loc="upper left")
+
+        ax2 = ax1.twinx()
+        ax2.plot(l_channel, label = "Aspirated length", color = "firebrick")
+        ax2.set_ylabel("Displacement [nm]")
+        plt.legend(loc="upper right")
+
         plt.figure(2)
         plt.loglog(f, Pxx_den)
-        plt.title("FFT")
+        plt.title("FFT pressure")
         plt.xlabel("Frequency [Hz]")
         plt.ylabel("Intensity")
 
         plt.figure(3)
+        plt.loglog(f_L, Pxx_den_L)
+        plt.title("FFT aspirated length")
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("Intensity")
+
+        plt.figure(4)
         plt.plot(time, pressure, label = "Pressure signal", color = 'royalblue')
         plt.plot(ref_P_time, ref_P, label = "Pressure reference", color = "firebrick")
         plt.xlabel("Time [s]")
         plt.ylabel("Pressure [Pa]")
         plt.legend(loc="upper left")
 
-        plt.figure(4)
+        plt.figure(5)
         plt.plot(time, aspirated_length, label = "Aspirated length signal", color = "royalblue")
         plt.plot(ref_L_time, ref_L, label = "Aspirated length reference", color = "firebrick")
         plt.xlabel("Time [s]")
         plt.ylabel("δOPL [nm]")
         plt.legend(loc="upper left")
 
-        plt.figure(5)
-        plt.plot(max_freqs, E_storage, label = "E'", color = "orange")
+        plt.figure(6)
+        plt.loglog(max_freqs, E_storage, label = "E'", color = "orange")
         plt.scatter(max_freqs, E_storage)
-        plt.plot(max_freqs, E_loss, label = "E''", color = "slateblue")
+        plt.loglog(max_freqs, E_loss, label = "E''", color = "slateblue")
         plt.scatter(max_freqs, E_loss)
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("E', E'' [kPa]")
+        plt.legend(loc="upper left")
+
+
+        plt.figure(7)
+        plt.plot(time, pressure, label = "Pressure signal", color = 'royalblue')
+        plt.plot(ref_FFT_time_P, ref_FFT_P, label = "Pressure reference", color = "firebrick")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Pressure [Pa]")
+        plt.legend(loc="upper left")
+
+        plt.figure(8)
+        plt.plot(time, aspirated_length, label = "Aspirated length signal FFT", color = "royalblue")
+        plt.plot(ref_FFT_time_L, ref_FFT_L, label = "Aspirated length reference FFT", color = "firebrick")
+        plt.xlabel("Time [s]")
+        plt.ylabel("δOPL [nm]")
+        plt.legend(loc="upper left")
+
+        plt.figure(9)
+        plt.loglog(max_freqs, E_storage_FFT, label = "E' FFT", color = "orange")
+        plt.scatter(max_freqs, E_storage_FFT)
+        plt.loglog(max_freqs, E_loss_FFT, label = "E'' FFT", color = "slateblue")
+        plt.scatter(max_freqs, E_loss_FFT)
         plt.xlabel("Frequency [Hz]")
         plt.ylabel("E', E'' [kPa]")
         plt.legend(loc="upper left")

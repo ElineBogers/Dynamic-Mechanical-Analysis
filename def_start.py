@@ -27,8 +27,8 @@ def start_osci (N_wait, mean, standard_deviation , data_file):
             N_samples_start = N_samples_start + 1
 
             #define start when signal is bigger for 0,025 seconds + boolean 
-            if N_samples_start == 150:
-                N_start = N_data_loop - 150
+            if N_samples_start ==250:
+                N_start = N_data_loop - 249
                 booleanstart = True        
         else :
             N_samples_start = 0
