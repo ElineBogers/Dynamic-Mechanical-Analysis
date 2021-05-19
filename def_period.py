@@ -8,6 +8,7 @@ import def_start
 import def_unload
 import def_stop
 import def_creep_equ
+import pandas as pd
 
 #function that loops over data in file to find start
 def define_period(pressure_data, N, length_data) :
@@ -69,7 +70,7 @@ def define_period(pressure_data, N, length_data) :
     time_definition = [] * N_difference 
     define_pressure = [] * N_difference 
     define_length = [] * N_difference
-    
+
         
     #loop over time to define time steps
     for pressure in data_pressure:
@@ -79,14 +80,32 @@ def define_period(pressure_data, N, length_data) :
         define_pressure.append(pressure*-1)
         time_definition.append(time)
 
+    #define parameters of function creep_data
+    P0 = - pressure_data[N_wait]
+    L0 = length_data[N_wait]
 
+    creep_data = length_data[N_wait:N_start] - L0
+    operations_creep = len(creep_data)
+    time_creep = []
+    for x in range(0, operations_creep): 
+        time = x * 0.001
+        time_creep.append(time)
+
+    tot_operations = len(data_pressure)
+    tot_time = (tot_operations + operations_creep) * 0.001
+
+    creep_data2 = def_creep_equ.remove_creep(time_creep, creep_data, P0, tot_time)
+    subtract_data = creep_data2[operations_creep:]
+    
+    #for i in range(0,operations):
 
     if all(length_data) != 0:
-        L_data_mean = length_data[N_start:N_stop]
+        L_data_raw = length_data[N_start:N_stop]
+        L_data_mean = L_data_raw - subtract_data
         L_fin_std_dev, L_fin_mean = def_std_dev.variance_cal(L_data_mean)
 
         #define data length
-        data_length = ((length_data[N_start:N_stop]) - L_fin_mean) / 1.33 
+        data_length = ((L_data_mean) - L_fin_mean) / 1.33 
         data_length = np.tile(data_length, N)
     
         for length in data_length:
@@ -119,7 +138,7 @@ def define_period(pressure_data, N, length_data) :
     operations_tot = len(pressure_data)
     tot_time = 0.001 * operations_tot
     time_step_tot = np.linspace(0, tot_time, num = operations_tot)
-    
+
     plt.plot(time_step_tot, pressure_data, label = "Signal", color = "Black")
     plt.plot(op1, area1, label = "Area 1", color = "Red")
     plt.plot(op2, area2, label = "Area 2", color = "Yellow")
@@ -130,15 +149,25 @@ def define_period(pressure_data, N, length_data) :
     plt.xlabel("Time [s]")
     plt.ylabel("Pressure [Pa]")
     plt.legend(loc="upper right")
-    plt.show()
 
-    #define parameters of function creep_data
-    P0 = pressure_data[N_wait]
-    creep_data = length_data[N_wait:N_start]
-    operations = len(creep_data)
-    time_end = 0.001 * operations
-    time_series = np.linspace(0, time_end, num = operations)
-    params, params_covariance = def_creep_equ.remove_creep(time_series, creep_data, P0)
+    plt.figure(2)
+    plt.plot(creep_data2, label = "Creep reference", color = "royalblue")
+    plt.plot(creep_data, label = "Creep Signal", color = "firebrick")
+    plt.xlabel("Operations")
+    plt.ylabel("δOPL [nm]")
+    plt.legend(loc="upper right")
+    plt.title("Creep fit")
+    
+    plt.figure(3)
+    plt.plot(L_data_raw, label = "Raw data")
+    plt.plot(L_data_mean, label = "Corrected data")
+    plt.plot(subtract_data, label = "Creep")
+    plt.xlabel("Operations")
+    plt.ylabel("δOPL [nm]")
+    plt.title("Data correction")
+    plt.legend(loc="upper right")
+
+    plt.show()
 
     return time_definition, define_pressure, define_length
 

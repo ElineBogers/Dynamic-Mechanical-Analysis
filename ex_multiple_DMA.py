@@ -28,6 +28,17 @@ N = 2
 rad_pip = 86e-6
 rad_sam = 350e-6
 
+#Counting amount of data files
+amount = 0
+E_storage_tot = [0] * amount_freqs
+E_loss_tot = [0] * amount_freqs
+lists_loss = {}
+lists_storage = {}
+
+for i in range (0,amount_freqs):
+    lists_loss["f_loss"+str(i+1)] = []
+    lists_storage["f_storage"+str(i+1)] = []
+
 #deltasense data
 for filename in os.listdir(str("Data_Eline")) :
     if filename.endswith (".tdms") :
@@ -117,7 +128,7 @@ for filename in os.listdir(str("Data_Eline")) :
 
             x = x + 1
         
-        print(f" \n Frequencies pressure: {max_freqs}\n\n Frequencies aspirated length: {max_freqs_L}  \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss} \n \n E' FFT: {E_storage_FFT} \n E'': {E_loss_FFT}")
+        print(f" \n Frequencies pressure: {max_freqs}\n\n Frequencies aspirated length: {max_freqs_L}  \n\n Maginitude Pressure: {R_P} \n Phase Pressure: {θ_P} \n\n Maginitude Aspirated Lenght: {R_L} \n Phase Aspirated Length: {θ_L} \n\n Phase difference: {θ_T}\n \n E': {E_storage}\n E'': {E_loss} \n \n E' FFT: {E_storage_FFT} \n E'' FFT: {E_loss_FFT}")
 
         #plot new amplitude and phase as a reference graph
         ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_P, θ_P, operations)
@@ -197,6 +208,57 @@ for filename in os.listdir(str("Data_Eline")) :
         plt.legend(loc="upper left")
 
         plt.show()
+
+       
+    for i in range(0, amount_freqs):
+        lists_loss["f_loss"+str(i+1)].append(E_loss[i])
+        lists_storage["f_storage"+str(i+1)].append(E_storage[i])
+    
+    E_storage_tot = np.add(E_storage_tot, E_storage)
+    E_loss_tot = np.add(E_loss_tot, E_loss)
+    amount = amount + 1
+    
+E_storage_mean = E_storage_tot / amount
+E_loss_mean = E_loss_tot / amount
+
+Eloss_variance = []
+Estorage_variance = []
+
+for freq in range(0, amount_freqs):
+    std_dev_loss = lists_loss["f_loss"+str(freq + 1)]
+    std_dev_storage = lists_storage["f_storage"+str(freq + 1)]
+
+    variances_loss = []
+    variances_storage = []
+
+    for x in range(0, amount):
+        std_dev_L = (std_dev_loss[x] - E_loss_mean[freq]) ** 2
+        std_dev_S = (std_dev_storage[x] - E_storage_mean[freq]) ** 2
+
+        variances_loss.append(std_dev_L)
+        variances_storage.append(std_dev_S)
+
+    variance_L = math.sqrt(sum(variances_loss) / amount)
+    variance_S = math.sqrt(sum(variances_loss) / amount)
+
+    Eloss_variance.append(variance_L)
+    Estorage_variance.append(variance_S)
+
+plt.loglog(max_freqs, E_storage_tot, label = "E' FFT", color = "orange")
+plt.scatter(max_freqs, E_storage_tot)
+plt.errorbar(max_freqs, E_storage_tot, yerr = Estorage_variance)
+plt.loglog(max_freqs, E_loss_tot, label = "E'' FFT", color = "slateblue")
+plt.scatter(max_freqs, E_loss_tot)
+plt.errorbar(max_freqs, E_loss_tot, yerr = Eloss_variance)
+plt.xlabel("Frequency [Hz]")
+plt.ylabel("E', E'' [kPa]")
+plt.legend(loc="upper left")
+plt.title(f"E modulus on N = {amount}")
+plt.show()
+
+print(f"Eloss variance: {Eloss_variance}  \nEstorage variance: {Estorage_variance}")
+
+ 
 
 #
             #plt.figure(1)

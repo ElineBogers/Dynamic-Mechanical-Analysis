@@ -16,7 +16,7 @@ def ampli_phase_FFT(data_file, max_freqs, time):
     
     for f in max_freqs :
 
-        index, = np.where(np.isclose(freq, f, atol = 1/40))
+        index, = np.where(np.isclose(freq, f, atol = 0.001))
 
         magnitude = np.abs(fft_data[index[0]])
         phase = np.angle(fft_data[index[0]])
