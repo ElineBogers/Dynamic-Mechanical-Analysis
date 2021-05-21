@@ -17,7 +17,7 @@ def define_unload(data_file, std_dev):
     N_wait_reversed = 0
 
     #filter out preload (and time it takes to start run)
-    N_start = 4000
+    N_start = 5000
     length = len(data_file)
     N_end = length - N_start
     start_data = data_file[:N_end]

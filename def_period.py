@@ -11,7 +11,7 @@ import def_creep_equ
 import pandas as pd
 
 #function that loops over data in file to find start
-def define_period(pressure_data, N, length_data) :
+def define_period(pressure_data, N, length_data, perio) :
 
     #define standaard deviation of first part
     data_std_dev = pressure_data[0:750]
@@ -139,35 +139,36 @@ def define_period(pressure_data, N, length_data) :
     tot_time = 0.001 * operations_tot
     time_step_tot = np.linspace(0, tot_time, num = operations_tot)
 
-    plt.plot(time_step_tot, pressure_data, label = "Signal", color = "Black")
-    plt.plot(op1, area1, label = "Area 1", color = "Red")
-    plt.plot(op2, area2, label = "Area 2", color = "Yellow")
-    plt.plot(op3, area3, label = "Area 3", color = "Green")
-    plt.plot(op4, area4, label = "Area 4", color = "royalblue")
-    plt.plot(op5, area5, label = "Area 5", color = "Orange")
-    
-    plt.xlabel("Time [s]")
-    plt.ylabel("Pressure [Pa]")
-    plt.legend(loc="upper right")
+    if perio == True:
+        plt.figure(1)
+        plt.plot(time_step_tot, pressure_data, label = "Signal", color = "Black")
+        plt.plot(op1, area1, label = "Area 1", color = "Red")
+        plt.plot(op2, area2, label = "Area 2", color = "Yellow")
+        plt.plot(op3, area3, label = "Area 3", color = "Green")
+        plt.plot(op4, area4, label = "Area 4", color = "royalblue")
+        plt.plot(op5, area5, label = "Area 5", color = "Orange")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Pressure [Pa]")
+        plt.legend(loc="upper right")
 
-    plt.figure(2)
-    plt.plot(creep_data2, label = "Creep reference", color = "royalblue")
-    plt.plot(creep_data, label = "Creep Signal", color = "firebrick")
-    plt.xlabel("Operations")
-    plt.ylabel("δOPL [nm]")
-    plt.legend(loc="upper right")
-    plt.title("Creep fit")
+        plt.figure(2)
+        plt.plot(creep_data2, label = "Creep reference", color = "royalblue")
+        plt.plot(creep_data, label = "Creep Signal", color = "firebrick")
+        plt.xlabel("Operations")
+        plt.ylabel("δOPL [nm]")
+        plt.legend(loc="upper right")
+        plt.title("Creep fit")
     
-    plt.figure(3)
-    plt.plot(L_data_raw, label = "Raw data")
-    plt.plot(L_data_mean, label = "Corrected data")
-    plt.plot(subtract_data, label = "Creep")
-    plt.xlabel("Operations")
-    plt.ylabel("δOPL [nm]")
-    plt.title("Data correction")
-    plt.legend(loc="upper right")
+        plt.figure(3)
+        plt.plot(L_data_raw, label = "Raw data")
+        plt.plot(L_data_mean, label = "Corrected data")
+        plt.plot(subtract_data, label = "Creep")
+        plt.xlabel("Operations")
+        plt.ylabel("δOPL [nm]")
+        plt.title("Data correction")
+        plt.legend(loc="upper right")
 
-    plt.show()
+    
 
     return time_definition, define_pressure, define_length
 
