@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from nptdms import TdmsFile
+# First add all data to a list and then use the reversed 
 
 def reverse(N_start, data_file):
     #REVERSE DATA

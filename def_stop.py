@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from nptdms import TdmsFile
 import def_reverse_data
 
-def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file) :
+def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file, Fs) :
 
     #define amount iterations
     N_samples_stop = 0
@@ -14,7 +14,7 @@ def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file) :
     #boolean to start and end new file
     booleanstop = False
     
-    #define range of standard deviation
+    #define range of standard deviation for first datapoint
     mean_min = mean - (standard_deviation)
     mean_max = mean + (standard_deviation)
     
@@ -35,8 +35,8 @@ def stop_osci(N_wait_reversed, N_normal, standard_deviation, mean, data_file) :
             N_samples_stop = N_samples_stop + 1
 
             #define start when signal is bigger for 0,025 seconds + boolean 
-            if N_samples_stop == 150:
-                N_stop = N_now + 150
+            if N_samples_stop == int(0.25 * Fs):
+                N_stop = N_now + int(0.249 * Fs)
                 booleanstop = True        
         else :
             N_samples_stop= 0

@@ -3,12 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #create reference oscillation
-def reference_data(frequency, amplitude, phase, operations) :
+def reference_data(frequency, amplitude, phase, operations, Fs) :
     #   input
     N_freq = len(frequency)
 
     #  pressure sensor takes 1 kHz samples (1000 samples/s)
-    timestep = 1/1000
+    timestep = 1/Fs
 
     #   initialize command list
     signal = np.zeros(operations)

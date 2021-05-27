@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from nptdms import TdmsFile
 
-def define_wait(data_file, std_dev) :
+def define_wait(data_file, std_dev, Fs) :
     #define counters
-    N_data = 5000
+    N_data = 5 * Fs
     N_equal = 0
 
     #define variables for pressure range
@@ -16,19 +16,21 @@ def define_wait(data_file, std_dev) :
     booleanwait = False
 
     #define start wait
-    N_wait = 5000
+    N_wait = N_data
 
     #filter out preload (and time it takes to start run)
-    start_data = data_file[5000:]
+    start_data = data_file[N_data:]
 
-    #loop over data to recognize wait
+    #loop over data to recognize wait. When pressure is still within a range of 7 times the standard deviation after 0.75 seconds, define start of wait.
+    #Booleanwait is there to prevent to overwrite the time definition of the wait. Besides the boundaries of the interval are only changed when a datapoint is not within this range (P_prev1, P_prev2).
     for pressure in start_data :
 
         if P_prev1 < pressure < P_prev2 and booleanwait == False:
+            #N_equal counts how many datapoints are within the interval consecutively.
             N_equal = N_equal + 1
             
-            if N_equal == 750:
-                N_wait = N_data - 750
+            if N_equal == int(0.75*Fs):
+                N_wait = N_data - int(0.75*Fs)
                 booleanwait = True
         else:
             N_equal = 0
@@ -38,7 +40,7 @@ def define_wait(data_file, std_dev) :
 
         N_data = N_data + 1
 
-    #define end point for determination of standard deviation
-    N_wait_end = N_wait + 500
-    #print (N_wait)
+    #define end point for determination of standard deviation Interval of 0.5 seconds.
+    N_wait_end = N_wait + int(0.5 *Fs)
+    
     return (N_wait, N_wait_end)

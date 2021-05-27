@@ -10,12 +10,14 @@ def variance_cal(data_file):
 
     # Mean of the data
     mean = sum(data_file) / n
+
     # Square deviations
     deviations = [(x - mean) ** 2 for x in data_file]
     
-    # Variance
-    variance = 2 * math.sqrt(sum(deviations) / n)
-    return variance, mean
+    # standard deviation
+    standard_deviation = 2 * math.sqrt(sum(deviations) / n)
+    
+    return standard_deviation, mean
 
 
 

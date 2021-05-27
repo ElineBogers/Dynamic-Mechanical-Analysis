@@ -1,16 +1,19 @@
 import numpy as np
 from scipy import signal
 import itertools
+import matplotlib.pyplot as plt
 
-def maxima (data_file, amount_freq, xN, N):
-    #define timestep (1kHz sampling freq)
-    fs = 1000 
+def maxima (data_file, amount_freq, xN, N, Fs):
+    len_data = len(data_file)
 
-    f, Pxx_den = signal.periodogram(data_file, fs)
+    #for x in range(0,len_data):
+        #data_file.append(0)
+
+    f, Pxx_den = signal.periodogram(data_file, Fs)
 
     #define amount operations and minimal frequency
-    operations = len(data_file)
-    def_min_freq = 1/(operations * (1/1000) / (N*xN))
+    #operations = len(data_file)
+    def_min_freq = 1/(len_data * (1/Fs) / (N*xN))
 
     #find local maxima
     freq_test_retrieval = f[signal.argrelextrema(Pxx_den,np.greater)]
@@ -32,7 +35,7 @@ def maxima (data_file, amount_freq, xN, N):
         freq_index = freq_test_retrieval[max_index_int]
         max_freq_all.append(freq_index)
 
-        if freq_index < (def_min_freq - 0.025):
+        if freq_index < (def_min_freq - 0.01):
             continue
         else :
             if len (max_freq) >= amount_freq:
@@ -44,7 +47,3 @@ def maxima (data_file, amount_freq, xN, N):
     max_freq.sort()
     
     return freq_test_retrieval, maxima_freqs, max_freq, f , Pxx_den
-
-
-
-
