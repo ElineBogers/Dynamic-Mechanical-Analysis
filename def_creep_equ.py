@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from nptdms import TdmsFile
 import os
 from scipy.optimize import curve_fit
+#fucntion that find the best parameters for the creep fit. Then it uses this parameters to make a synthetic signal. 
 
 def fit_creepL(time, P0, K, n):
     return P0/K*(1 - np.exp(-(K/n*time)))

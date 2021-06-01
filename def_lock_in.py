@@ -7,10 +7,12 @@ import def_cosine_wave
 import def_butter_lowpass
 
 def filter_freq(signal, frequency, max_freq, alpha, Fs):
-    N = 3
+    #define period where to extract the information from. N gives the amount of periods that are included per frequency.
+    N = 100
     periods_freq = int(1/frequency * N *Fs)
     operations_tot = len(signal)
 
+    #keep on removing periods untill the length of the amount of periods is equal or smaller than 
     while periods_freq > operations_tot:
         N = N - 1
         periods_freq = int(1/frequency * N *Fs)

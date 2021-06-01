@@ -84,21 +84,27 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
     P0 = - pressure_data[N_wait]
     L0 = length_data[N_wait]
 
+    #Define creep period and isolate data.
     creep_data = length_data[N_wait:N_start] - L0
     operations_creep = len(creep_data)
+
+    #create time_domain of the same length as the creep data
     time_creep = []
     for x in range(0, operations_creep): 
         time = x * 1/Fs
         time_creep.append(time)
 
-    
+    #define period of wait + oscillation    
     tot_time = (len_oscillation + operations_creep) * 1/Fs
 
+    #make fit for creep
     creep_data2 = def_creep_equ.remove_creep(time_creep, creep_data, P0, tot_time, Fs)
     subtract_data = creep_data2[operations_creep:]
     
-
+    #create aspirated length oscillation data
     if all(length_data) != 0:
+
+        #subtract creepfit from oscillation data
         L_data_raw = length_data[N_start:N_stop]
         L_data_mean = L_data_raw - subtract_data
         L_fin_std_dev, L_fin_mean = def_std_dev.variance_cal(L_data_mean)
@@ -113,6 +119,7 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
     else:
         define_length = 0
 
+    #define each period area
     area1 = pressure_data[0:750]
     op1 = []
     time1 = 0
@@ -133,31 +140,35 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
     op5 = []
     time5 = 0.001 * N_stop
     for x in range(N_stop, N_wait_reversed): op5.append(time5); time5 = time5 + 0.001
-
+    
+    #define time array for plot
     operations_tot = len(pressure_data)
     tot_time = 0.001 * operations_tot
     time_step_tot = np.linspace(0, tot_time, num = operations_tot)
 
+    #plot whole measurement including the segmentation areas
     if perio == True:
         plt.figure(1)
-        plt.plot(time_step_tot, pressure_data, label = "Signal", color = "Black")
-        plt.plot(op1, area1, label = "Area 1", color = "Red")
-        plt.plot(op2, area2, label = "Area 2", color = "Yellow")
-        plt.plot(op3, area3, label = "Area 3", color = "Green")
-        plt.plot(op4, area4, label = "Area 4", color = "royalblue")
-        plt.plot(op5, area5, label = "Area 5", color = "Orange")
+        plt.plot(time_step_tot, pressure_data, label = "Signal")
+        plt.plot(op1, area1, label = "Area 1")
+        plt.plot(op2, area2, label = "Area 2")
+        plt.plot(op3, area3, label = "Area 3")
+        plt.plot(op4, area4, label = "Area 4")
+        plt.plot(op5, area5, label = "Area 5")
         plt.xlabel("Time [s]")
         plt.ylabel("Pressure [Pa]")
         plt.legend(loc="upper right")
 
+        #plot creep against creepfit
         plt.figure(2)
-        plt.plot(creep_data2, label = "Creep reference", color = "royalblue")
-        plt.plot(creep_data, label = "Creep Signal", color = "firebrick")
+        plt.plot(creep_data2, label = "Creep reference")
+        plt.plot(creep_data, label = "Creep Signal")
         plt.xlabel("Operations")
         plt.ylabel("δOPL [nm]")
         plt.legend(loc="upper right")
         plt.title("Creep fit")
-    
+
+        #plot corrected, uncorrected and creepfit data between oscillation interval
         plt.figure(3)
         plt.plot(L_data_raw, label = "Raw data")
         plt.plot(L_data_mean, label = "Corrected data")
@@ -166,8 +177,6 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
         plt.ylabel("δOPL [nm]")
         plt.title("Data correction")
         plt.legend(loc="upper right")
-
-    
 
     return time_definition, define_pressure, define_length
 

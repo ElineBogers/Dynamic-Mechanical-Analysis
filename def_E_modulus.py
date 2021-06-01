@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+#function to calculate elastic modulus, knowing the phase difference and amplitude of the DMA.
 
 def elas_modulus(pip_rad, sam_rad, R_freq_P, R_freq_L, phi):
 
