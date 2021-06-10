@@ -7,8 +7,8 @@ def start_osci (N_wait, mean, standard_deviation , data_file, Fs):
     
     #count number of samples 
     N_samples_start = 0
-    N_data_loop = N_wait
-    N_start = int()
+    N_data_loop = N_wait + int(0.25*Fs)
+    N_start = N_wait + int(0.25*Fs)
 
     #boolean to start and end new file
     booleanstart = False
@@ -18,7 +18,7 @@ def start_osci (N_wait, mean, standard_deviation , data_file, Fs):
     mean_max = mean + (standard_deviation)
 
     #data for determination oscillation
-    data_oscillation = data_file[N_wait:]
+    data_oscillation = data_file[N_data_loop:]
     
     for pressure in data_oscillation:
 
@@ -29,7 +29,7 @@ def start_osci (N_wait, mean, standard_deviation , data_file, Fs):
 
             #define start when signal is bigger for 0,025 seconds + boolean 
             if N_samples_start == int(0.25 * Fs):
-                N_start = N_data_loop - int(0.249 * Fs)
+                N_start = N_data_loop - int(0.25* Fs)
                 booleanstart = True        
         else :
             N_samples_start = 0

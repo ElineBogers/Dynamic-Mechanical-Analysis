@@ -35,8 +35,8 @@ def define_wait(data_file, std_dev, Fs) :
         else:
             N_equal = 0
 
-            P_prev1 = pressure - 7*std_dev
-            P_prev2 = pressure + 7*std_dev
+            P_prev1 = pressure - 8*std_dev
+            P_prev2 = pressure + 8*std_dev
 
         N_data = N_data + 1
 

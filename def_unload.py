@@ -37,7 +37,7 @@ def define_unload(data_file, std_dev, Fs):
             N_equal = N_equal + 1
             
             if N_equal == int(0.5*Fs):
-                N_wait_reversed = N_now + int(0.3*Fs)
+                N_wait_reversed = N_now + int(0.03*Fs)
                 booleanwait = True
         else:
             N_equal = 0

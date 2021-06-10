@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 #Fiter that is cutting of frequencies higher than the cutoff frequency.
 
 def butter_lowpass(cutoff, Fs, order=5):
-    nyq = 0.5 * Fs
+    nyq = int(0.5 * Fs)
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a

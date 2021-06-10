@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from nptdms import TdmsFile
+import nptdms
 import os
 from numpy.lib.function_base import hamming
 from scipy import signal
@@ -11,28 +12,31 @@ from scipy.signal.windows.windows import hann
 import def_period
 import def_FFT
 import def_lock_in
+import def_lock_in2
+import def_lock_in3
 import def_reference
 import def_butter_lowpass
 import def_E_modulus
 import def_FFT2
-import x_def_bandpass
+import def_butter_bandpass
 from operator import truediv
 
 #use Bayesian Methods for Hackers plotstyle. 
-plt.style.use('bmh')
+plt.style.use(["science", "no-latex", "grid", "vibrant"])
 
 #control which figure to show. When True plot is shown
-perio = True           #shows whole measurement with segmentation of different stages
-real = True            #shows both aspirated length and pressure sample results
-FFT = True             #shows FFT from periodogram function for both aspirated length as pressure
-REF = True             #shows isolated oscillation with most comparable 
-Emod = True            #shows elastic modulus of single measurement for both FFT or Lock-In determination
+perio = False            #shows whole measurement with segmentation of different stages
+creep = False           #shows plots of creep fit and corrected and raw data
+real = False            #shows both aspirated length and pressure sample results
+FFT = False             #shows FFT from periodogram function for both aspirated length as pressure
+REF = False              #shows isolated oscillation with most comparable 
+Emod = False             #shows elastic modulus of single measurement for both FFT or Lock-In determination
 Eav = True             #shows average elastic modulus of multiple measurements
-A_P_av = True          #shows average amplitude of aspirated length and phase difference between pressure ans aspirated length signal
+A_P_av = False          #shows average amplitude of aspirated length and phase difference between pressure ans aspirated length signal
 
 #VARIABLES THAT NEED TO BE GIVEN AS AN INPUT
 amount_freqs = 7        #to determine how many frequencies have to be found in oscillation
-Fs = 4000               #Sampling frequency
+#Fs = 4000               #Sampling frequency
 xN = 1                  #variable for how many times the data should be repeated by the tile function
 N = 2                   #how many cycles for the lowest frequency
 order = 2               #order of lowpass filter in lock-in
@@ -47,8 +51,8 @@ amplitude2 = [30]*amount_freqs
 phase2 = [1/4*math.pi]*amount_freqs
 
 #radius pipette and sample
-rad_pip = 43e-6
-rad_sam = 156e-6
+rad_pip = 40e-6         #meters
+rad_sam = 160e-6        #meters
 
 #Counting amount of data files
 amount = 0
@@ -96,14 +100,23 @@ for filename in os.listdir(str("Data_Eline")) :
         group = tdms_file['Demodulated data']
         p_channel = group["pressure"]
         l_channel = group["aspirated length"] 
-        
+
+        tdf = tdms_file["Raw data"]
+        tdc = tdf.channels()
+        Fs = int(tdc[0].properties["Effective_F_Sps"])
+              
+        #DATA MANIPULATION
         #filter data with lowpass, cutoff = 10 Hz
-        p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 10, Fs)
-        l_channel = def_butter_lowpass.butter_lowpass_filter(l_channel, 10, Fs)
+        p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 8, Fs)
+        l_channel = def_butter_lowpass.butter_lowpass_filter(l_channel, 8, Fs)
 
         #Define oscillation, preload, wait and unload are all filtered out.
-        time, pressure, aspirated_length = def_period.define_period(p_channel, xN, l_channel, perio, Fs)           
+        time, pressure, aspirated_length = def_period.define_period(p_channel, xN, l_channel, perio, creep, Fs)           
         
+        #filter with bandpass 0.20626 Hz
+        #filtered_data = def_butter_lowpass.butter_lowpass_filter(aspirated_length, 0.8, Fs)
+        filtered_data = def_butter_bandpass.butter_bandpass_filter(pressure, 0.19, 0.21, Fs, 1)
+
         #define amount of operations
         operations = len(pressure)
         
@@ -111,6 +124,8 @@ for filename in os.listdir(str("Data_Eline")) :
         #time, pressure = def_reference.reference_data(frequencies, amplitude, phase, operations)
         #Stime, aspirated_length = def_reference.reference_data(frequencies, amplitude2, phase2, operations)
 
+
+        #FREQUENCY RETRIEVAL
         #Define displayed frequencies by finding the maxima of the FFT. FFT defined by using periodogram function
         f, maxima_f, max_freqs, f, Pxx_den = def_FFT.maxima(pressure, amount_freqs, xN, N, Fs)
         max_frequency = max(max_freqs)
@@ -120,102 +135,82 @@ for filename in os.listdir(str("Data_Eline")) :
         max_frequency = max(max_freqs)
         min_frequency = min(max_freqs)
 
-        #Finding amplitude and phase by using FFT. FFT defined by np.fft.fft function.
-        fft_data_P, freq_P, magnitude2_P, phase2_P = def_FFT2.ampli_phase_FFT(pressure, max_freqs, time, Fs)
-        fft_data_L, freq_L, magnitude2_L, phase2_L = def_FFT2.ampli_phase_FFT(aspirated_length, max_freqs, time, Fs)
+
+        #LOCK-IN DETERMINATION
+        #find the amplitude and phase of the PRESSURE signal by lock-in principle
+        R_freq_P, θ_freq_P = def_lock_in.filter_freq(pressure, max_freqs, order, Fs)        
+            
+        #find the amplitude and phase of the ASPIRATED LENGTH signal by lock-in principle
+        R_freq_L, θ_freq_L = def_lock_in.filter_freq(aspirated_length, max_freqs, order, Fs)
+        R_L_freq = np.array(R_freq_L) / (10**9)              #multiply by e^-9 to have the amplitude in meters
+
+        #calculate difference between phases 
+        θ_T = np.subtract(θ_freq_P, θ_freq_L)
+
+
+        #ALTERNATIVE LOCK-IN DETERMINATION
+        #find the amplitude and phase of the PRESSURE signal by alternative lock-in principle
+        R_freq_P2, θ_freq_P2 = def_lock_in2.lock_in_custom(pressure, max_freqs, order, Fs)        
+            
+        #find the amplitude and phase of the ASPIRATED LENGTH signal by alternative lock-in principle
+        R_freq_L2, θ_freq_L2 = def_lock_in2.lock_in_custom(aspirated_length, max_freqs, order, Fs)
+        R_L_freq2 = np.array(R_freq_L2) / (10**9)            #multiply by e^-9 to have the amplitude in meters
+
+        #calculate difference between phases 
+        θ_T2 = np.subtract(θ_freq_P2, θ_freq_L2)
+
+        #PHASE DIFFERENCE
+        T_LI = def_lock_in3.lock_in_diff(pressure, aspirated_length, max_freqs, Fs, order)
+        
+        #FFT DETERMINATION
+        #Finding amplitude and phase of PRESSURE by using FFT. FFT defined by np.fft.fft function.
+        fft_data_P, freq_P, R_freq_P_FFT, θ_freq_P_FFT = def_FFT2.ampli_phase_FFT(pressure, max_freqs, time, Fs)
+
+        #find the amplitude and phase of the ASPIRATED LENGTH signal by FFT
+        fft_data_L, freq_L, R_freq_L_FFT, θ_freq_L_FFT = def_FFT2.ampli_phase_FFT(aspirated_length, max_freqs, time, Fs)
+        R_L_freq_FFT = np.array(R_freq_L_FFT) / (10**9)       #multiply by e^-9 to have the amplitude in meters
+        #θ_freq_L_FFT = np.subtract(math.pi, θ_freq_L_FFT)
+
+        #calculate difference between phases and append to list
+        θ_T_FFT = np.subtract(θ_freq_P_FFT, θ_freq_L_FFT)
+        
         
 
-        #lists of magintude, phase, phase difference, elastic storage and loss and the difference between both
-        R_P = []
-        θ_P = []
+        #ELASTIC MODULUS
+        #find elastic storage and loss of signal with usage of lock-in for A and θ determination
+        E_storage, E_loss, Tand = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P, R_L_freq, θ_T)
+        #find elastic storage and loss of signal with usage of lock-in for A and θ determination
+        E_storage2, E_loss2, Tand2 = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, T_LI)
+        #find elastic storage and loss of signal with usage of FFT for A and θ determination
+        E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, θ_T_FFT)  #θ_FFT
 
-        R_L = []
-        θ_L = []
-
-        θ_T = []
-        θ_T_FFT = []
-
-        E_storage = []
-        E_loss = []
-        Tand = []
-
-        E_storage_FFT = []
-        E_loss_FFT = []
-        Tand_FFT = []
-
-        #counter to call the right frequency from the list.
-        x = 0
-
-        #Filter out single frequencies
-        for frequency in max_freqs:
-            
-            #find the amplitude and phase of the PRESSURE signal by lock-in principle
-            R_freq_P, θ_freq_P = def_lock_in.filter_freq(pressure, frequency, max_frequency, order, Fs)
-
-            #save amplitude and phase in lists
-            R_P.append(R_freq_P)
-            θ_P.append(θ_freq_P)
-
-            #find the amplitude and phase of the ASPIRATED LENGTH signal by lock-in principle
-            R_freq_L, θ_freq_L = def_lock_in.filter_freq(aspirated_length, frequency, max_frequency, order, Fs)
-            R_L_freq = R_freq_L / (1* math.exp(9))  #multiply by e^-9 to have the amplitude in meters
-
-            #save amplitude and phase in lists
-            R_L.append(R_L_freq)
-            θ_L.append(θ_freq_L)
-
-            #calculate difference between phases and append to list
-            θ = (θ_freq_P - θ_freq_L)
-            θ_T.append(θ)
-
-            #find elastic storage and loss of signal with usage of lock-in for A and θ determination
-            E_S, E_L, T = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P, R_L_freq, θ)
-
-            #append lists with variables obtained from function above
-            E_storage.append(E_S)
-            E_loss.append(E_L)
-            Tand.append(T)   
-
-            #call amplitude and phase per frequency. x is counting which frequency should be called
-            magni_FFT_P = magnitude2_P[x]
-            magni_FFT_L = magnitude2_L[x] / (1* math.exp(9))
-            phase_FFT_P = phase2_P[x]
-            phase_FFT_L = phase2_L[x]
-
-            #calculate difference between phases and append to list
-            θ_FFT = (phase_FFT_P - phase_FFT_L)
-            θ_T_FFT.append(θ_FFT)
-            
-            #find elastic storage and loss of signal with usage of FFT for A and θ determination
-            E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, magni_FFT_P, magni_FFT_L, θ_FFT)  #θ_FFT
-
-            E_storage_FFT.append(E_S_FFT)
-            E_loss_FFT.append(E_L_FFT)
-            Tand_FFT.append(T_FFT) 
-
-            #counter for frequency calling
-            x = x + 1
+    
+        #REFERENCE WAVES
+        #plot new amplitude and phase as a reference graph. A and θ determined from Lock-In
+        ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_freq_P, θ_freq_P, operations, Fs)
+        ref_L_time, ref_L = def_reference.reference_data(max_freqs, R_freq_L, θ_freq_L, operations, Fs)
 
         #plot new amplitude and phase as a reference graph. A and θ determined from Lock-In
-        ref_P_time, ref_P = def_reference.reference_data(max_freqs, R_P, θ_P, operations, Fs)
-        ref_L_time, ref_L = def_reference.reference_data(max_freqs, R_L, θ_L, operations, Fs)
+        ref_P_time2, ref_P2 = def_reference.reference_data(max_freqs, R_freq_P_FFT, θ_freq_P2, operations, Fs)
+        ref_L_time2, ref_L2 = def_reference.reference_data(max_freqs, R_freq_L_FFT, θ_freq_L2, operations, Fs)
 
         #plot new amplitude and phase as a reference graph. A and θ determined from FFT
-        ref_FFT_time_P, ref_FFT_P = def_reference.reference_data(max_freqs, magnitude2_P, phase2_P, operations, Fs)
-        ref_FFT_time_L, ref_FFT_L = def_reference.reference_data(max_freqs, magnitude2_L, phase2_L, operations, Fs)
+        ref_FFT_time_P, ref_FFT_P = def_reference.reference_data(max_freqs, R_freq_P_FFT, θ_freq_P_FFT, operations, Fs)
+        ref_FFT_time_L, ref_FFT_L = def_reference.reference_data(max_freqs, R_freq_L_FFT, θ_freq_L_FFT, operations, Fs)
 
+        #COHERENCE
         #find coherence of lock-in  and FFT reference compared to the signal
         co_P = signal.coherence(ref_P, pressure, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
         co_L = signal.coherence(ref_L, aspirated_length, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
         co_P_FFT = signal.coherence(ref_FFT_P, pressure, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
         co_L_FFT = signal.coherence(ref_FFT_L, aspirated_length, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
 
-        print(f"\nCoherence: \nPressure lock-in: {co_P}\nAspirated length lock-in: {co_L} \nPressure FFT: {co_P_FFT} \nAspirated length FFT: {co_L_FFT}\n")
-
+        #PRINT VARIABLES
         #print usefull information of a single measurement
-        print(f"\nFrequencies pressure: {max_freqs}\n\nFrequencies aspirated length: {max_freqs_L}  \n\nMaginitude Pressure: {R_P} \nPhase Pressure: {θ_P} \n\nMaginitude Aspirated Lenght: {R_L} \nPhase Aspirated Length: {θ_L} \n\nPhase difference: {θ_T}\n \nE': {E_storage}\nE'': {E_loss} \nE''/E' = {Tand} \n")
-        print(f"\nMagnitude FFT Pressure: {magnitude2_P} \nPhase FFT pressure: {phase2_P}\n\nMagnitude FFT Aspirated Length: {magnitude2_L} \nPhase FFT Aspirated Length: {phase2_L}\n\nPhase difference FFT: {θ_T_FFT} \n\nE' FFT: {E_storage_FFT} \nE'' FFT: {E_loss_FFT}  \nE''/E' FFT: {Tand_FFT} \n")
-
+        print(f"\nFrequencies pressure: {max_freqs}\n\nFrequencies aspirated length: {max_freqs_L}  \n\nMaginitude Pressure: {R_freq_P} \nPhase Pressure: {θ_freq_P} \n\nMaginitude Aspirated Lenght: {R_freq_L} \nPhase Aspirated Length: {θ_freq_L} \n\nPhase difference: {θ_T}\n \nE': {E_storage}\nE'': {E_loss} \nE''/E' = {Tand} \n")
+        print(f"\nMagnitude FFT Pressure: {R_freq_P_FFT} \nPhase FFT pressure: {θ_freq_P_FFT}\n\nMagnitude FFT Aspirated Length: {R_freq_L_FFT} \nPhase FFT Aspirated Length: {θ_freq_L_FFT}\n\nPhase difference FFT: {θ_T_FFT} \n\nE' FFT: {E_S_FFT} \nE'' FFT: {E_L_FFT}  \nE''/E' FFT: {T_FFT} \n")
+        print(f"\nPhase difference alternative Lock-In: {T_LI}\n")
+        #PLOTS
         #plot whole measurement for both aspirated length as pressure. Shows plot when real is True
         if real == True:
 
@@ -267,6 +262,22 @@ for filename in os.listdir(str("Data_Eline")) :
             plt.ylabel("δOPL [nm]")
             plt.legend(loc="upper left")
 
+            plt.figure(20)
+            plt.plot(time, pressure, label = "Signal")
+            plt.plot(ref_P_time2, ref_P2, label = "Reference")
+            plt.title("Pressure signal determined from alternative Lock-In")
+            plt.xlabel("Time [s]")
+            plt.ylabel("Pressure [Pa]")
+            plt.legend(loc="upper left")
+
+            plt.figure(21)
+            plt.plot(time, aspirated_length, label = "Signal")
+            plt.plot(ref_L_time2, ref_L2, label = "Reference")
+            plt.title("Aspirated length signal determined from alternative Lock-In")
+            plt.xlabel("Time [s]")
+            plt.ylabel("δOPL [nm]")
+            plt.legend(loc="upper left")
+
             plt.figure(10)
             plt.plot(time, pressure, label = "Signal")
             plt.plot(ref_FFT_time_P, ref_FFT_P, label = "Reference")
@@ -312,21 +323,37 @@ for filename in os.listdir(str("Data_Eline")) :
             plt.legend(loc="upper right")
             plt.title("Elastic moduli with Lock-In determination")
            
-            fig14, ax1 = plt.subplots()
-            ax1.loglog(max_freqs, E_storage_FFT, label = "E' ")
-            ax1.scatter(max_freqs, E_storage_FFT)
-            ax1.loglog(max_freqs, E_loss_FFT, label = "E''")
-            ax1.scatter(max_freqs, E_loss_FFT)
+            fig22, ax1 = plt.subplots()
+            ax1.loglog(max_freqs, E_storage2, label = "E'")
+            ax1.scatter(max_freqs, E_storage2)
+            ax1.loglog(max_freqs, E_loss2, label = "E''")
+            ax1.scatter(max_freqs, E_loss2)
             ax1.set_xlabel("Frequency [Hz]")
             ax1.set_ylabel("E', E'' [kPa]")
             plt.legend(loc="upper left")
             
             ax2 = ax1.twinx()
-            ax2.plot(max_freqs, Tand_FFT, label = "tan δ", color = "#7A68A6")
-            ax2.scatter(max_freqs,Tand_FFT, color = "#7A68A6")
+            ax2.plot(max_freqs, Tand2, label = "tan δ", color = "#7A68A6")
+            ax2.scatter(max_freqs, Tand2, color = "#7A68A6")
             ax2.set_ylabel("tan δ")
             plt.legend(loc="upper right")
-            plt.title(f"{filename}\nElastic moduli with FFT determination")
+            plt.title("Elastic moduli with alternative Lock-In determination")
+
+            fig14, ax1 = plt.subplots()
+            ax1.loglog(max_freqs, E_S_FFT, label = "E' ")
+            ax1.scatter(max_freqs, E_S_FFT)
+            ax1.loglog(max_freqs, E_L_FFT, label = "E''")
+            ax1.scatter(max_freqs, E_L_FFT)
+            ax1.set_xlabel("Frequency [Hz]")
+            ax1.set_ylabel("E', E'' [kPa]")
+            plt.legend(loc="upper left")
+            
+            ax2 = ax1.twinx()
+            ax2.plot(max_freqs, T_FFT, label = "tan δ", color = "#7A68A6")
+            ax2.scatter(max_freqs,T_FFT, color = "#7A68A6")
+            ax2.set_ylabel("tan δ")
+            plt.legend(loc="upper right")
+            plt.title(f"{filename}\nElastic moduli with FFT determination") #{filename}\n
 
         #show plots of single measurement
         plt.show()
@@ -337,13 +364,13 @@ for filename in os.listdir(str("Data_Eline")) :
             lists_storage["f_storage"+str(i+1)].append(E_storage[i])
             lists_tand["f_tand"+str(i+1)].append(Tand[i])
 
-            lists_loss_FFT["f_loss_FFT"+str(i+1)].append(E_loss_FFT[i])
-            lists_storage_FFT["f_storage_FFT"+str(i+1)].append(E_storage_FFT[i])
-            lists_tand_FFT["f_tand_FFT"+str(i+1)].append(Tand_FFT[i])
+            lists_loss_FFT["f_loss_FFT"+str(i+1)].append(E_L_FFT[i])
+            lists_storage_FFT["f_storage_FFT"+str(i+1)].append(E_S_FFT[i])
+            lists_tand_FFT["f_tand_FFT"+str(i+1)].append(T_FFT[i])
 
-            lists_AMP["AMP"+str(i+1)].append(R_L[i])
+            lists_AMP["AMP"+str(i+1)].append(R_freq_L[i])
             lists_PHA["PHA"+str(i+1)].append(θ_T[i])
-            lists_AMP_FFT["AMP_FFT"+str(i+1)].append(magnitude2_L[i])
+            lists_AMP_FFT["AMP_FFT"+str(i+1)].append(R_freq_L_FFT[i])
             lists_PHA_FFT["PHA_FFT"+str(i+1)].append(θ_T_FFT[i])
     
         #Sum all elastic moduli to eventually calculate the mean
@@ -351,13 +378,13 @@ for filename in os.listdir(str("Data_Eline")) :
         E_loss_tot = np.add(E_loss_tot, E_loss)
         Tand_tot = np.add(Tand_tot, Tand)
 
-        E_storage_tot_FFT = np.add(E_storage_tot_FFT, E_storage_FFT)
-        E_loss_tot_FFT = np.add(E_loss_tot_FFT, E_loss_FFT)
-        Tand_tot_FFT = np.add(Tand_tot_FFT, Tand_FFT)
+        E_storage_tot_FFT = np.add(E_storage_tot_FFT, E_S_FFT)
+        E_loss_tot_FFT = np.add(E_loss_tot_FFT, E_L_FFT)
+        Tand_tot_FFT = np.add(Tand_tot_FFT, T_FFT)
 
-        AMP_tot = np.add(AMP_tot, R_L)
+        AMP_tot = np.add(AMP_tot, R_freq_L)
         PHA_tot = np.add(PHA_tot, θ_T)
-        AMP_tot_FFT = np.add(AMP_tot_FFT, magnitude2_L)
+        AMP_tot_FFT = np.add(AMP_tot_FFT, R_freq_L_FFT)
         PHA_tot_FFT = np.add(PHA_tot_FFT, θ_T_FFT)
 
         #count the amount of files

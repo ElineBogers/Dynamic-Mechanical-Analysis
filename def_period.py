@@ -20,7 +20,7 @@ import pandas as pd
     #7 flat stopping point (time it takes to stop recording)
 
 #function that loops over data in file to find start
-def define_period(pressure_data, N, length_data, perio, Fs) :
+def define_period(pressure_data, N, length_data, perio, creep, Fs) :
 
     #define standaard deviation of first part, take 0.75 seconds as interval. 
     sec_1 = int(0.75*Fs)
@@ -120,30 +120,30 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
         define_length = 0
 
     #define each period area
-    area1 = pressure_data[0:750]
+    area1 = pressure_data[0:int(0.75*Fs)]
     op1 = []
     time1 = 0
-    for x in range(0,750): op1.append(time1); time1 = time1 + 0.001
-    area2 = pressure_data[4000:N_wait]
+    for x in range(0,int(0.75*Fs)): op1.append(time1); time1 = time1 + 1/Fs
+    area2 = pressure_data[(int(4*Fs)):N_wait]
     op2 = []
-    time2 = 0.001 * 4000
-    for x in range(4000,N_wait): op2.append(time2); time2 = time2 + 0.001
+    time2 = 4
+    for x in range(int(4*Fs),N_wait): op2.append(time2); time2 = time2 + 1/Fs
     area3 = pressure_data[N_wait:N_start]
     op3 = []
-    time3 = 0.001 * N_wait
-    for x in range(N_wait, N_start): op3.append(time3); time3 = time3 + 0.001
+    time3 = 1/Fs * N_wait
+    for x in range(N_wait, N_start): op3.append(time3); time3 = time3 + 1/Fs
     area4 = pressure_data[N_start:N_stop]
     op4 = []
-    time4 = 0.001 * N_start
-    for x in range(N_start, N_stop): op4.append(time4); time4 = time4 + 0.001
+    time4 = 1/Fs * N_start
+    for x in range(N_start, N_stop): op4.append(time4); time4 = time4 + 1/Fs
     area5 = pressure_data[N_stop:N_wait_reversed]
     op5 = []
-    time5 = 0.001 * N_stop
-    for x in range(N_stop, N_wait_reversed): op5.append(time5); time5 = time5 + 0.001
+    time5 = 1/Fs * N_stop
+    for x in range(N_stop, N_wait_reversed): op5.append(time5); time5 = time5 + 1/Fs
     
     #define time array for plot
     operations_tot = len(pressure_data)
-    tot_time = 0.001 * operations_tot
+    tot_time = operations_tot / Fs
     time_step_tot = np.linspace(0, tot_time, num = operations_tot)
 
     #plot whole measurement including the segmentation areas
@@ -156,9 +156,10 @@ def define_period(pressure_data, N, length_data, perio, Fs) :
         plt.plot(op4, area4, label = "Area 4")
         plt.plot(op5, area5, label = "Area 5")
         plt.xlabel("Time [s]")
-        plt.ylabel("Pressure [Pa]")
+        plt.ylabel("Pressure sensor displacement [nm]")
         plt.legend(loc="upper right")
 
+    if creep == True:
         #plot creep against creepfit
         plt.figure(2)
         plt.plot(creep_data2, label = "Creep reference")
