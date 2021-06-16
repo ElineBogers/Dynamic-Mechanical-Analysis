@@ -11,14 +11,21 @@ import def_cosine_wave
 import def_lock_in
 import def_butter_lowpass
 
+#use Bayesian Methods for Hackers plotstyle. 
+plt.style.use(["science", "no-latex", "grid", "vibrant"])
+
+#decide which plots to show. when true it will be showed.
+perio = False
+creep = False
+
 #define frequencies
-frequencies = [0.33, 0.05, 0.11, 0.75, 1.2, 3.5]
+frequencies = [0.05, 0.1, 0.25, 0.5, 1, 2, 6]
 
 #to determine how many frequencies have to be found from local maxima
 amount_freqs = len(frequencies)
 
 #define phase and amplitude
-amplitude = [100]*amount_freqs
+amplitude = [50]*amount_freqs
 phase = [0]*amount_freqs
 
 #variable for how many times the data should be repeated
@@ -48,44 +55,45 @@ for filename in os.listdir(str(directory)) :
         tdms_file = TdmsFile.read(filename)
         group = tdms_file['Demodulated data']
         p_channel = group['pressure']
-        p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 10)
+
+        #determine sampling frequency Fs from tdms file
+        tdf = tdms_file["Raw data"]
+        tdc = tdf.channels()
+        Fs = int(tdc[0].properties["Effective_F_Sps"])
+
+        #filter frequency
+        p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 8, Fs)
+
 
         #define functions
-        time, oscillation, exta_oscillation = def_period.define_period(p_channel, xN, p_channel)
+        time, oscillation, exta_oscillation = def_period.define_period(p_channel, xN, p_channel, perio, creep, Fs)
 
         #define amount of operations
         operations = len(oscillation)
 
         #import reference oscillation data input
-        time1, signal = def_reference.reference_data(frequencies, amplitude, phase, operations)
+        time1, signal = def_reference.reference_data(frequencies, amplitude, phase, operations, Fs)
 
         #define frequency by maxima of FFT
-        f, maxima_f, max_freqs, f, Pxx_den  = def_FFT.maxima(oscillation, amount_freqs, xN, N)
+        f, maxima_f, max_freqs, f, Pxx_den  = def_FFT.maxima(oscillation, amount_freqs, xN, N, Fs)
         max_frequency = max(max_freqs)
         min_frequency = min(max_freqs)
-
-        #lists of magintude and phase
-        R = []
-        θ = []
+    
 
         #Filter out single frequencies
-        for frequency in max_freqs:
-            order = 2
-            R_freq, θ_freq = def_lock_in.filter_freq(oscillation, frequency, max_frequency, min_frequency, order)
-
-            R.append(R_freq)
-            θ.append(θ_freq)
+        order = 2
+        R, θ = def_lock_in.filter_freq(oscillation, max_freqs, order, Fs)
 
         #print(f" \n Frequencies: {max_freqs} \n Maginitude: {R} \n Phase: {θ} \n")
 
         #plot frequencies found
-        t_gen, P_gen = def_reference.reference_data(max_freqs, R, θ, operations)
+        t_gen, P_gen = def_reference.reference_data(max_freqs, R, θ, operations, Fs)
         
         #Plot reference input, signal and reference output
         plt.figure(2)
         #plt.plot(t_gen, P_gen, label = "Reference Output", color = "seagreen")
-        plt.plot(time, oscillation, label = tick_label[x], color = colors[x])
-        plt.plot(time1, signal, label = "Reference Input", color = 'royalblue')
+        plt.plot(time, oscillation, label = "Signal")
+        plt.plot(time1, signal, label = "Reference Input")
         plt.legend(loc="upper right")
         plt.xlabel("time [s]")
         plt.ylabel("pressure [Pa]")

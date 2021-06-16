@@ -18,27 +18,25 @@ import def_reference
 import def_butter_lowpass
 import def_E_modulus
 import def_FFT2
-import def_butter_bandpass
 from operator import truediv
 
 #use Bayesian Methods for Hackers plotstyle. 
 plt.style.use(["science", "no-latex", "grid", "vibrant"])
 
 #control which figure to show. When True plot is shown
-perio = False            #shows whole measurement with segmentation of different stages
-creep = False           #shows plots of creep fit and corrected and raw data
+perio = True            #shows whole measurement with segmentation of different stages
+creep = True           #shows plots of creep fit and corrected and raw data
 real = False            #shows both aspirated length and pressure sample results
-FFT = False             #shows FFT from periodogram function for both aspirated length as pressure
-REF = False              #shows isolated oscillation with most comparable 
-Emod = False             #shows elastic modulus of single measurement for both FFT or Lock-In determination
+FFT = True              #shows FFT from periodogram function for both aspirated length as pressure
+REF = True              #shows isolated oscillation with most comparable 
+Emod = True             #shows elastic modulus of single measurement for both FFT or Lock-In determination
 Eav = True             #shows average elastic modulus of multiple measurements
 A_P_av = False          #shows average amplitude of aspirated length and phase difference between pressure ans aspirated length signal
 
 #VARIABLES THAT NEED TO BE GIVEN AS AN INPUT
 amount_freqs = 7        #to determine how many frequencies have to be found in oscillation
-#Fs = 4000               #Sampling frequency
 xN = 1                  #variable for how many times the data should be repeated by the tile function
-N = 2                   #how many cycles for the lowest frequency
+N = 6                   #how many cycles for the lowest frequency
 order = 2               #order of lowpass filter in lock-in
 
 #define phase and amplitude
@@ -46,8 +44,8 @@ amplitude = [50]*amount_freqs
 phase = [0]*amount_freqs
 
 #data for generation fake data
-frequencies = [0.05, 0.1, 0.25, 0.5, 1, 2, 6]
-amplitude2 = [30]*amount_freqs
+frequencies = [0.5, 3]
+amplitude2 = [50]*amount_freqs
 phase2 = [1/4*math.pi]*amount_freqs
 
 #radius pipette and sample
@@ -101,6 +99,7 @@ for filename in os.listdir(str("Data_Eline")) :
         p_channel = group["pressure"]
         l_channel = group["aspirated length"] 
 
+        #determine sampling frequency Fs from tdms file
         tdf = tdms_file["Raw data"]
         tdc = tdf.channels()
         Fs = int(tdc[0].properties["Effective_F_Sps"])
@@ -115,14 +114,14 @@ for filename in os.listdir(str("Data_Eline")) :
         
         #filter with bandpass 0.20626 Hz
         #filtered_data = def_butter_lowpass.butter_lowpass_filter(aspirated_length, 0.8, Fs)
-        filtered_data = def_butter_bandpass.butter_bandpass_filter(pressure, 0.19, 0.21, Fs, 1)
+        #filtered_data = def_butter_bandpass.butter_bandpass_filter(pressure, 0.19, 0.21, Fs, 1)
 
         #define amount of operations
         operations = len(pressure)
         
         #generation of fake data to see how program works. 
-        #time, pressure = def_reference.reference_data(frequencies, amplitude, phase, operations)
-        #Stime, aspirated_length = def_reference.reference_data(frequencies, amplitude2, phase2, operations)
+        #time, pressure = def_reference.reference_data(frequencies, amplitude, phase, operations, Fs)
+        #time, aspirated_length = def_reference.reference_data(frequencies, amplitude2, phase2, operations, Fs)
 
 
         #FREQUENCY RETRIEVAL
@@ -132,7 +131,7 @@ for filename in os.listdir(str("Data_Eline")) :
         min_frequency = min(max_freqs)
         
         f_L, maxima_f_L, max_freqs_L, f_L, Pxx_den_L = def_FFT.maxima(aspirated_length, amount_freqs, xN, N, Fs)
-        max_frequency = max(max_freqs)
+        max_frequency = min(max_freqs)
         min_frequency = min(max_freqs)
 
 
@@ -182,7 +181,7 @@ for filename in os.listdir(str("Data_Eline")) :
         #find elastic storage and loss of signal with usage of lock-in for A and θ determination
         E_storage2, E_loss2, Tand2 = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, T_LI)
         #find elastic storage and loss of signal with usage of FFT for A and θ determination
-        E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, θ_T_FFT)  #θ_FFT
+        E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, θ_T_FFT) 
 
     
         #REFERENCE WAVES
@@ -210,6 +209,8 @@ for filename in os.listdir(str("Data_Eline")) :
         print(f"\nFrequencies pressure: {max_freqs}\n\nFrequencies aspirated length: {max_freqs_L}  \n\nMaginitude Pressure: {R_freq_P} \nPhase Pressure: {θ_freq_P} \n\nMaginitude Aspirated Lenght: {R_freq_L} \nPhase Aspirated Length: {θ_freq_L} \n\nPhase difference: {θ_T}\n \nE': {E_storage}\nE'': {E_loss} \nE''/E' = {Tand} \n")
         print(f"\nMagnitude FFT Pressure: {R_freq_P_FFT} \nPhase FFT pressure: {θ_freq_P_FFT}\n\nMagnitude FFT Aspirated Length: {R_freq_L_FFT} \nPhase FFT Aspirated Length: {θ_freq_L_FFT}\n\nPhase difference FFT: {θ_T_FFT} \n\nE' FFT: {E_S_FFT} \nE'' FFT: {E_L_FFT}  \nE''/E' FFT: {T_FFT} \n")
         print(f"\nPhase difference alternative Lock-In: {T_LI}\n")
+
+
         #PLOTS
         #plot whole measurement for both aspirated length as pressure. Shows plot when real is True
         if real == True:
@@ -494,8 +495,8 @@ for i in range(0, amount_freqs):
     PHA_std_dev_FFT.append(std_dev_P_fin_FFT)
 
 #print important variables
-print(f"\nLOCK-IN \nEloss standard deviation: {Eloss_std_dev}  \nEstorage standard deviation: {Estorage_std_dev} \nTangend standard deviation: {Tand_std_dev}\n")
-print(f"\nFFT \nEloss standard deviation: {Eloss_std_dev_FFT}  \nEstorage standard deviation: {Estorage_std_dev_FFT}\nTangend standard deviation: {Tand_std_dev_FFT}\n")
+print(f"\nLOCK-IN \nEloss mean: {E_loss_mean} \nEstorage mean: {E_storage_mean} \nTangend mean: {Tand_mean} \n\nEloss standard deviation: {Eloss_std_dev}  \nEstorage standard deviation: {Estorage_std_dev} \nTangend standard deviation: {Tand_std_dev}\n")
+print(f"\nFFT \nEloss mean: {E_loss_mean_FFT} \nEstorage mean: {E_storage_mean_FFT} \nTangend mean: {Tand_mean_FFT} \n\nEloss standard deviation: {Eloss_std_dev_FFT}  \nEstorage standard deviation: {Estorage_std_dev_FFT}\nTangend standard deviation: {Tand_std_dev_FFT}\n")
 
 #plot average elastic moduli including standard deviation
 if Eav == True:
@@ -537,13 +538,6 @@ if Eav == True:
     plt.legend(loc="upper right")
     plt.title(f"Average elastic modulus on {amount} samples determined with FFT")
 
-    #plot for autocorrelation
-    corr = signal.correlate(ref_L,aspirated_length, mode = "full")
-    lags = signal.correlation_lags(len(ref_L), len(aspirated_length), mode = "full")
-    corr /= np.max(corr)
-    plt.figure(17)
-    plt.plot(lags,corr)
-
 if A_P_av == True:
     fig18, ax1 = plt.subplots()
     ax1.loglog(max_freqs, AMP_mean, label = "Aspirated length", color = "#348ABD")
@@ -580,20 +574,10 @@ if A_P_av == True:
 #show plot of average elastic moduli
 plt.show()
 
-#
-            #plt.figure(1)
-            #plt.plot(R_freq, label = f"{frequency} Hz")
-            #plt.legend(loc="upper left")
-            #plt.title("Magnitude")
-            
-            #plt.figure(2)
-            #plt.plot(θ_freq, label = f"{frequency} Hz")
-            #plt.legend(loc="upper left")
-            #plt.title("Phase") '''
 
-        #plt.figure(1)
-        #P_diff = np.diff(p_channel)
-        #plt.plot(P_diff)
-        #plt.show()
-
-
+##plot for autocorrelation
+    #corr = signal.correlate(ref_L,aspirated_length, mode = "full")
+    #lags = signal.correlation_lags(len(ref_L), len(aspirated_length), mode = "full")
+    #corr /= np.max(corr)
+    #plt.figure(17)
+    #plt.plot(lags,corr)

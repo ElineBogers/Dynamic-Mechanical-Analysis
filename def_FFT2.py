@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from nptdms import TdmsFile
 from scipy import signal
-import x_def_bandpass
 import itertools
 import math
 
@@ -27,6 +26,12 @@ def ampli_phase_FFT(data_file, max_freqs, time, Fs):
         magnitude = np.abs(fft_data[index[0]]) / N * 2
 
         phase = np.angle(fft_data_window[index[0]])
+
+        #correct for phase jump of 1 pi
+        if phase > 3:
+            phase = phase - math.pi
+        if phase < -3:
+            phase = phase + math.pi
           
         lst_magnitude.append(magnitude)
         lst_phase.append(phase)         #+ 1/2*math.pi
