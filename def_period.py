@@ -21,7 +21,7 @@ import pandas as pd
 
 #function that loops over data in file to find start
 def define_period(pressure_data, N, length_data, perio, creep, Fs) :
-
+    operations_tot = len(pressure_data)
     #define standaard deviation of first part, take 0.75 seconds as interval. 
     sec_1 = int(0.75*Fs)
     data_std_dev = pressure_data[0:sec_1]
@@ -86,8 +86,8 @@ def define_period(pressure_data, N, length_data, perio, creep, Fs) :
 
     #Define creep period and isolate data.
     creep_data = length_data[N_wait:N_start] - L0
-    operations_creep = len(creep_data)
-
+    operations_creep = len(creep_data) 
+    
     #create time_domain of the same length as the creep data
     time_creep = []
     for x in range(0, operations_creep): 
@@ -100,6 +100,12 @@ def define_period(pressure_data, N, length_data, perio, creep, Fs) :
     #make fit for creep
     creep_data2 = def_creep_equ.remove_creep(time_creep, creep_data, P0, tot_time, Fs)
     subtract_data = creep_data2[operations_creep:]
+    
+    #append for time for timeplot creep + oscillation time
+    time_creep_2 = []
+    for x in range(0, int(tot_time*Fs)):
+        time = x * 1/Fs
+        time_creep_2.append(time)
     
     #create aspirated length oscillation data
     if all(length_data) != 0:
@@ -140,7 +146,11 @@ def define_period(pressure_data, N, length_data, perio, creep, Fs) :
     op5 = []
     time5 = 1/Fs * N_stop
     for x in range(N_stop, N_wait_reversed): op5.append(time5); time5 = time5 + 1/Fs
-    
+    area6 = pressure_data[N_wait_reversed:int(operations_tot-5*Fs)]
+    op6 = []
+    time6 = 1/Fs * N_wait_reversed
+    for x in range(N_wait_reversed, int(operations_tot-5*Fs)): op6.append(time6); time6 = time6 + 1/Fs
+
     #define time array for plot
     operations_tot = len(pressure_data)
     tot_time = operations_tot / Fs
@@ -155,33 +165,28 @@ def define_period(pressure_data, N, length_data, perio, creep, Fs) :
         plt.plot(op3, area3, label = "Area 3")
         plt.plot(op4, area4, label = "Area 4")
         plt.plot(op5, area5, label = "Area 5")
+        plt.plot(op6, area6, label = "Area 6")
         plt.xlabel("Time [s]")
-        plt.ylabel("Pressure sensor displacement [nm]")
-        plt.legend(loc="upper right")
+        plt.ylabel("Pressure [nm]")
 
     if creep == True:
         #plot creep against creepfit
         plt.figure(2)
-        plt.plot(creep_data2, label = "Creep reference")
-        plt.plot(creep_data, label = "Creep Signal")
-        plt.xlabel("Operations")
+        plt.plot(time_creep_2, creep_data2, label = "Creep reference")
+        plt.plot(time_creep, creep_data, label = "Creep Signal")
+        plt.xlabel("Time [s]")
         plt.ylabel("δOPL [nm]")
         plt.legend(loc="upper right")
         plt.title("Creep fit")
 
         #plot corrected, uncorrected and creepfit data between oscillation interval
         plt.figure(3)
-        plt.plot(L_data_raw, label = "Raw data")
-        plt.plot(L_data_mean, label = "Corrected data")
-        plt.plot(subtract_data, label = "Creep")
-        plt.xlabel("Operations")
+        plt.plot(time_definition, L_data_raw, label = "Raw signal")
+        plt.plot(time_definition, L_data_mean, label = "Corrected signal")
+        plt.plot(time_definition, subtract_data, label = "Creep fit")
+        plt.xlabel("Time [s]")
         plt.ylabel("δOPL [nm]")
         plt.title("Data correction")
         plt.legend(loc="upper right")
 
     return time_definition, define_pressure, define_length
-
-
-
-            
-

@@ -24,19 +24,19 @@ from operator import truediv
 plt.style.use(["science", "no-latex", "grid", "vibrant"])
 
 #control which figure to show. When True plot is shown
-perio = True            #shows whole measurement with segmentation of different stages
-creep = True           #shows plots of creep fit and corrected and raw data
-real = False            #shows both aspirated length and pressure sample results
-FFT = True              #shows FFT from periodogram function for both aspirated length as pressure
+perio = False            #shows whole measurement with segmentation of different stages
+creep = False            #shows plots of creep fit and corrected and raw data
+real = False             #shows both aspirated length and pressure sample results
+FFT = False              #shows FFT from periodogram function for both aspirated length as pressure
 REF = True              #shows isolated oscillation with most comparable 
 Emod = True             #shows elastic modulus of single measurement for both FFT or Lock-In determination
-Eav = True             #shows average elastic modulus of multiple measurements
-A_P_av = False          #shows average amplitude of aspirated length and phase difference between pressure ans aspirated length signal
+Eav = True               #shows average elastic modulus of multiple measurements
+A_P_av = False           #shows average amplitude of aspirated length and phase difference between pressure ans aspirated length signal
 
 #VARIABLES THAT NEED TO BE GIVEN AS AN INPUT
 amount_freqs = 7        #to determine how many frequencies have to be found in oscillation
 xN = 1                  #variable for how many times the data should be repeated by the tile function
-N = 6                   #how many cycles for the lowest frequency
+N = 2                   #how many cycles for the lowest frequency
 order = 2               #order of lowpass filter in lock-in
 
 #define phase and amplitude
@@ -109,6 +109,12 @@ for filename in os.listdir(str("Data_Eline")) :
         p_channel = def_butter_lowpass.butter_lowpass_filter(p_channel, 8, Fs)
         l_channel = def_butter_lowpass.butter_lowpass_filter(l_channel, 8, Fs)
 
+        #time for total raw data plot
+        time_raw = []
+        for x in range(0, len(p_channel)):  
+            time = x * 1/Fs    
+            time_raw.append(time)
+
         #Define oscillation, preload, wait and unload are all filtered out.
         time, pressure, aspirated_length = def_period.define_period(p_channel, xN, l_channel, perio, creep, Fs)           
         
@@ -179,7 +185,7 @@ for filename in os.listdir(str("Data_Eline")) :
         #find elastic storage and loss of signal with usage of lock-in for A and θ determination
         E_storage, E_loss, Tand = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P, R_L_freq, θ_T)
         #find elastic storage and loss of signal with usage of lock-in for A and θ determination
-        E_storage2, E_loss2, Tand2 = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, T_LI)
+        E_storage2, E_loss2, Tand2 = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, θ_T2)
         #find elastic storage and loss of signal with usage of FFT for A and θ determination
         E_S_FFT, E_L_FFT, T_FFT = def_E_modulus.elas_modulus(rad_pip, rad_sam, R_freq_P_FFT, R_L_freq_FFT, θ_T_FFT) 
 
@@ -193,6 +199,7 @@ for filename in os.listdir(str("Data_Eline")) :
         ref_P_time2, ref_P2 = def_reference.reference_data(max_freqs, R_freq_P_FFT, θ_freq_P2, operations, Fs)
         ref_L_time2, ref_L2 = def_reference.reference_data(max_freqs, R_freq_L_FFT, θ_freq_L2, operations, Fs)
 
+        phase_zero = [0]*amount_freqs
         #plot new amplitude and phase as a reference graph. A and θ determined from FFT
         ref_FFT_time_P, ref_FFT_P = def_reference.reference_data(max_freqs, R_freq_P_FFT, θ_freq_P_FFT, operations, Fs)
         ref_FFT_time_L, ref_FFT_L = def_reference.reference_data(max_freqs, R_freq_L_FFT, θ_freq_L_FFT, operations, Fs)
@@ -204,11 +211,14 @@ for filename in os.listdir(str("Data_Eline")) :
         co_P_FFT = signal.coherence(ref_FFT_P, pressure, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
         co_L_FFT = signal.coherence(ref_FFT_L, aspirated_length, Fs, window = "hamming", nperseg = int(3*1/min_frequency))
 
+        print(f"\nLOCK-IN\n\n Pressure coherence: {co_P} \nAspirated length coherence: {co_L}\n")
+        print(f"\nFFT\n\n Pressure coherence: {co_P_FFT} \nAspirated length coherence: {co_L_FFT}\n")
+
         #PRINT VARIABLES
         #print usefull information of a single measurement
         print(f"\nFrequencies pressure: {max_freqs}\n\nFrequencies aspirated length: {max_freqs_L}  \n\nMaginitude Pressure: {R_freq_P} \nPhase Pressure: {θ_freq_P} \n\nMaginitude Aspirated Lenght: {R_freq_L} \nPhase Aspirated Length: {θ_freq_L} \n\nPhase difference: {θ_T}\n \nE': {E_storage}\nE'': {E_loss} \nE''/E' = {Tand} \n")
         print(f"\nMagnitude FFT Pressure: {R_freq_P_FFT} \nPhase FFT pressure: {θ_freq_P_FFT}\n\nMagnitude FFT Aspirated Length: {R_freq_L_FFT} \nPhase FFT Aspirated Length: {θ_freq_L_FFT}\n\nPhase difference FFT: {θ_T_FFT} \n\nE' FFT: {E_S_FFT} \nE'' FFT: {E_L_FFT}  \nE''/E' FFT: {T_FFT} \n")
-        print(f"\nPhase difference alternative Lock-In: {T_LI}\n")
+        print(f"\nPhase difference alternative Lock-In: {θ_T2}\n")
 
 
         #PLOTS
@@ -216,19 +226,19 @@ for filename in os.listdir(str("Data_Eline")) :
         if real == True:
 
             fig4, ax1 = plt.subplots()
-            ax1.plot(p_channel, label = "Pressure")
-            ax1.set_xlabel("operations")
-            ax1.set_ylabel("Pressure [Pa]")
+            ax1.plot(time_raw, p_channel, label = "Pressure")
+            ax1.set_xlabel("Time [s]")
+            ax1.set_ylabel("Pressure [nm]")
             plt.legend(loc="upper left")
             ax2 = ax1.twinx()
-            ax2.plot(l_channel, label = "Aspirated length", color = "#A60628")
+            ax2.plot(time_raw, l_channel, label = "Aspirated length", color = "#0077BB")
             ax2.set_ylabel("Displacement [nm]")
             plt.legend(loc="upper right")
 
             fig5, ax1 = plt.subplots()
             ax1.plot(l_channel, -p_channel)
             ax1.set_xlabel("Displacement [nm]")
-            ax1.set_ylabel("Pressure [Pa]")
+            ax1.set_ylabel("Pressure [nm]")
 
         #plot of FFT from peiodogram function for both aspirated length as pressure. Shows plot when FFT is True
         if FFT == True:
@@ -260,7 +270,7 @@ for filename in os.listdir(str("Data_Eline")) :
             plt.plot(ref_L_time, ref_L, label = "Reference")
             plt.title("Aspirated length signal determined from Lock-In")
             plt.xlabel("Time [s]")
-            plt.ylabel("δOPL [nm]")
+            plt.ylabel("Displacement [nm]")
             plt.legend(loc="upper left")
 
             plt.figure(20)
@@ -276,7 +286,7 @@ for filename in os.listdir(str("Data_Eline")) :
             plt.plot(ref_L_time2, ref_L2, label = "Reference")
             plt.title("Aspirated length signal determined from alternative Lock-In")
             plt.xlabel("Time [s]")
-            plt.ylabel("δOPL [nm]")
+            plt.ylabel("Displacement [nm]")
             plt.legend(loc="upper left")
 
             plt.figure(10)
@@ -292,19 +302,17 @@ for filename in os.listdir(str("Data_Eline")) :
             plt.plot(ref_FFT_time_L, ref_FFT_L, label = "Reference")
             plt.title("Aspirated length signal determined from FFT")
             plt.xlabel("Time [s]")
-            plt.ylabel("δOPL [nm]")
+            plt.ylabel("Displacement [nm]")
             plt.legend(loc="upper left")
 
             fig12, ax1 = plt.subplots()
             ax1.plot(aspirated_length, pressure, label = "Signal")
             ax1.set_xlabel("Displacement [nm]")
             ax1.set_ylabel("Pressure [Pa]")
+            ax1.plot(ref_FFT_L, ref_FFT_P, label = "Reference FFT")
+            ax1.plot(ref_L, ref_P, label = "Reference Lock-In")
             plt.legend(loc="upper left")
-            ax2 = ax1.twinx()
-            ax2.plot(ref_FFT_L, ref_FFT_P, label = "Reference FFT", color = "#A60628")
-            ax2.plot(ref_L, ref_P, label = "Reference Lock-In", color = "#7A68A6")
-            ax2.set_ylabel("Pressure [Pa]")
-            plt.legend(loc="upper right")
+            
         
         #plot of elastic modulus of a single measurement     
         if Emod == True:
@@ -317,11 +325,11 @@ for filename in os.listdir(str("Data_Eline")) :
             ax1.set_ylabel("E', E'' [kPa]")
             plt.legend(loc="upper left")
             
-            ax2 = ax1.twinx()
-            ax2.plot(max_freqs, Tand, label = "tan δ", color = "#7A68A6")
-            ax2.scatter(max_freqs, Tand, color = "#7A68A6")
-            ax2.set_ylabel("tan δ")
-            plt.legend(loc="upper right")
+            #ax2 = ax1.twinx()
+            #ax2.plot(max_freqs, Tand, label = "tan δ", color = "#7A68A6")
+            #ax2.scatter(max_freqs, Tand, color = "#7A68A6")
+            #ax2.set_ylabel("tan δ")
+            #plt.legend(loc="upper right")
             plt.title("Elastic moduli with Lock-In determination")
            
             fig22, ax1 = plt.subplots()
@@ -333,11 +341,11 @@ for filename in os.listdir(str("Data_Eline")) :
             ax1.set_ylabel("E', E'' [kPa]")
             plt.legend(loc="upper left")
             
-            ax2 = ax1.twinx()
-            ax2.plot(max_freqs, Tand2, label = "tan δ", color = "#7A68A6")
-            ax2.scatter(max_freqs, Tand2, color = "#7A68A6")
-            ax2.set_ylabel("tan δ")
-            plt.legend(loc="upper right")
+            #ax2 = ax1.twinx()
+            #ax2.plot(max_freqs, Tand2, label = "tan δ", color = "#7A68A6")
+            #ax2.scatter(max_freqs, Tand2, color = "#7A68A6")
+            #ax2.set_ylabel("tan δ")
+            #plt.legend(loc="upper right")
             plt.title("Elastic moduli with alternative Lock-In determination")
 
             fig14, ax1 = plt.subplots()
@@ -349,12 +357,13 @@ for filename in os.listdir(str("Data_Eline")) :
             ax1.set_ylabel("E', E'' [kPa]")
             plt.legend(loc="upper left")
             
-            ax2 = ax1.twinx()
-            ax2.plot(max_freqs, T_FFT, label = "tan δ", color = "#7A68A6")
-            ax2.scatter(max_freqs,T_FFT, color = "#7A68A6")
-            ax2.set_ylabel("tan δ")
-            plt.legend(loc="upper right")
+            #ax2 = ax1.twinx()
+            #ax2.plot(max_freqs, T_FFT, label = "tan δ", color = "#7A68A6")
+            #ax2.scatter(max_freqs,T_FFT, color = "#7A68A6")
+            #ax2.set_ylabel("tan δ")
+            #plt.legend(loc="upper right")
             plt.title(f"{filename}\nElastic moduli with FFT determination") #{filename}\n
+
 
         #show plots of single measurement
         plt.show()
@@ -511,13 +520,13 @@ if Eav == True:
     ax1.set_ylabel("E', E'' [kPa]")
     plt.legend(loc="upper left")
             
-    ax2 = ax1.twinx()
-    ax2.plot(max_freqs, Tand_mean, label = "tan δ", color = "#7A68A6")
-    ax2.scatter(max_freqs, Tand_mean, color = "#7A68A6")
-    ax2.errorbar(max_freqs, Tand_mean, yerr = Tand_std_dev, color = "#7A68A6")
-    ax2.set_ylabel("tan δ")
-    plt.legend(loc="upper right")
-    plt.title(f"Average elastic modulus on {amount} samples determined with Lock-In")
+    #ax2 = ax1.twinx()
+    #ax2.plot(max_freqs, Tand_mean, label = "tan δ", color = "#7A68A6")
+    #ax2.scatter(max_freqs, Tand_mean, color = "#7A68A6")
+    #ax2.errorbar(max_freqs, Tand_mean, yerr = Tand_std_dev, color = "#7A68A6")
+    #ax2.set_ylabel("tan δ")
+    #plt.legend(loc="upper right")
+    #plt.title(f"Average elastic modulus on {amount} samples determined with Lock-In")
 
     fig16, ax1 = plt.subplots()
     ax1.loglog(max_freqs, E_storage_mean_FFT, label = "E'", color = "#348ABD")
@@ -530,13 +539,13 @@ if Eav == True:
     ax1.set_ylabel("E', E'' [kPa]")
     plt.legend(loc="upper left")
             
-    ax2 = ax1.twinx()
-    ax2.plot(max_freqs, Tand_mean_FFT, label = "tan δ", color = "#7A68A6")
-    ax2.scatter(max_freqs, Tand_mean_FFT, color = "#7A68A6")
-    ax2.errorbar(max_freqs, Tand_mean_FFT, yerr = Tand_std_dev_FFT, color = "#7A68A6")
-    ax2.set_ylabel("tan δ")
-    plt.legend(loc="upper right")
-    plt.title(f"Average elastic modulus on {amount} samples determined with FFT")
+    #ax2 = ax1.twinx()
+    #ax2.plot(max_freqs, Tand_mean_FFT, label = "tan δ", color = "#7A68A6")
+    #ax2.scatter(max_freqs, Tand_mean_FFT, color = "#7A68A6")
+    #ax2.errorbar(max_freqs, Tand_mean_FFT, yerr = Tand_std_dev_FFT, color = "#7A68A6")
+    #ax2.set_ylabel("tan δ")
+    #plt.legend(loc="upper right")
+    #plt.title(f"Average elastic modulus on {amount} samples determined with FFT")
 
 if A_P_av == True:
     fig18, ax1 = plt.subplots()
@@ -573,6 +582,7 @@ if A_P_av == True:
 
 #show plot of average elastic moduli
 plt.show()
+
 
 
 ##plot for autocorrelation

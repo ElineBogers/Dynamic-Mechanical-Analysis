@@ -15,7 +15,7 @@ def lock_in_custom(data, frequencies, order, Fs):
 
         #create reference wave by filtering out single frequency
         data_single_sin = def_butter_bandpass.butter_bandpass_filter(data, (frequency-0.01), (frequency+0.01), Fs, 1)
-
+        
         #create cosine of reference wave by calculating the derivative.
         data_single_cos = np.diff(data_single_sin) / (1/Fs)
         data_single_cos = np.append(data_single_cos, 0)
